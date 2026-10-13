@@ -1,210 +1,403 @@
 /**
  * 回神 · Back to Focus
- * Apple 风格灵动药丸胶囊 (HUD) 样式表
+ * Apple 风格可折叠可拖拽悬浮控制卡片样式
  */
 
-.btf-capsule-root {
+.btf-widget-root {
   position: fixed;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 24px;
+  right: 24px;
   z-index: 9999999;
-  pointer-events: none;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
-}
-
-.btf-capsule {
-  pointer-events: auto;
-  position: relative;
-  display: flex;
-  align-items: center;
-  height: 38px;
-  min-width: 290px;
-  padding: 0 14px;
-  border-radius: 22px;
-  background: rgba(28, 28, 30, 0.85);
-  backdrop-filter: blur(25px) saturate(190%);
-  -webkit-backdrop-filter: blur(25px) saturate(190%);
-  border: 0.5px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.15);
-  color: #FFFFFF;
-  font-size: 13px;
-  transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
   user-select: none;
 }
 
-/* 常规状态布局 */
-.btf-capsule-normal {
-  display: flex;
+/* ========================================================
+   1. 折叠微型药丸态 (Mini Pill)
+   ======================================================== */
+.btf-mini-pill {
+  display: none;
   align-items: center;
-  width: 100%;
-  gap: 10px;
-  transition: opacity 0.25s ease;
+  gap: 8px;
+  padding: 6px 14px;
+  height: 36px;
+  border-radius: 18px;
+  background: rgba(28, 28, 30, 0.88);
+  backdrop-filter: blur(25px) saturate(190%);
+  -webkit-backdrop-filter: blur(25px) saturate(190%);
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  color: #FFFFFF;
+  cursor: grab;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
 }
 
-.btf-capsule-brand {
-  font-size: 11px;
+.btf-mini-pill:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38);
+}
+
+.btf-mini-pill:active {
+  cursor: grabbing;
+}
+
+.btf-mini-logo {
+  font-size: 13px;
+  color: #FF9F0A;
+}
+
+.btf-mini-text {
+  font-size: 12px;
   font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.12);
-  color: #E5E5EA;
-  letter-spacing: 0.5px;
-}
-
-.btf-capsule-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.btf-capsule-label {
-  color: #8E8E93;
-  font-size: 11px;
-}
-
-.btf-capsule-val {
-  font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: #F2F2F7;
 }
 
-.btf-capsule-divider {
-  width: 0.5px;
-  height: 14px;
-  background: rgba(255, 255, 255, 0.18);
+.btf-mini-expand {
+  font-size: 12px;
+  color: #8E8E93;
 }
 
-.btf-capsule-action {
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 6px;
-  transition: background 0.15s ease;
+/* ========================================================
+   2. 展开卡片态 (Expanded Card)
+   ======================================================== */
+.btf-card {
+  display: flex;
+  flex-direction: column;
+  width: 268px;
+  padding: 12px 14px;
+  gap: 10px;
+  border-radius: 18px;
+  background: rgba(28, 28, 30, 0.90);
+  backdrop-filter: blur(30px) saturate(190%);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  border: 0.5px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), 0 2px 10px rgba(0, 0, 0, 0.2);
+  color: #FFFFFF;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-.btf-capsule-action:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.btf-tts-playing {
-  color: #007AFF;
-  background: rgba(0, 122, 255, 0.18);
-}
-
-.btf-accent-amber {
-  color: #FF9F0A;
-}
-
-/* 定时注意力唤醒（Mindfulness Ping）展开状态 */
-.btf-capsule-ping {
-  display: none;
+/* 头部 Header */
+.btf-card-header {
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
-  gap: 12px;
+  padding-bottom: 2px;
+  cursor: grab;
 }
 
-.btf-capsule.btf-capsule-expanded {
-  min-width: 380px;
-  height: 44px;
-  border-color: rgba(255, 159, 10, 0.4);
-  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.38), 0 0 16px rgba(255, 159, 10, 0.18);
+.btf-card-header:active {
+  cursor: grabbing;
 }
 
-.btf-capsule.btf-capsule-expanded .btf-capsule-normal {
-  display: none;
-}
-
-.btf-capsule.btf-capsule-expanded .btf-capsule-ping {
-  display: flex;
-}
-
-/* 呼吸脉冲小圆点 */
-.btf-ping-pulse {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #FF9F0A;
-  box-shadow: 0 0 8px #FF9F0A;
-  animation: btfPillPulse 1.4s infinite ease-in-out;
-}
-
-@keyframes btfPillPulse {
-  0% { transform: scale(0.9); opacity: 0.7; }
-  50% { transform: scale(1.3); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0.7; }
-}
-
-.btf-ping-text {
-  font-size: 13px;
-  font-weight: 500;
-  color: #FFF;
-}
-
-.btf-ping-actions {
+.btf-card-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #E5E5EA;
+  letter-spacing: -0.2px;
 }
 
-.btf-ping-btn {
-  display: inline-flex;
+.btf-logo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #007AFF;
+}
+
+.btf-header-actions {
+  display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  border: 0.5px solid rgba(255, 255, 255, 0.15);
+}
+
+.btf-icon-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
   background: rgba(255, 255, 255, 0.1);
-  color: #FFF;
+  color: #8E8E93;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.btf-ping-continue:hover {
+.btf-icon-btn:hover {
   background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
 }
 
-.btf-ping-snapback {
-  background: rgba(0, 122, 255, 0.25);
-  border-color: rgba(0, 122, 255, 0.4);
+/* 注意力唤醒横幅 (Mindfulness Banner) */
+.btf-ping-banner {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 159, 10, 0.12);
+  border: 0.5px solid rgba(255, 159, 10, 0.3);
+  animation: btfBannerSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.btf-ping-snapback:hover {
-  background: rgba(0, 122, 255, 0.4);
+.btf-ping-banner.btf-ping-visible {
+  display: flex;
 }
 
-.btf-kbd {
-  font-family: inherit;
+@keyframes btfBannerSlide {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.btf-ping-prompt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #FFB340;
+}
+
+.btf-ping-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #FF9F0A;
+  box-shadow: 0 0 6px #FF9F0A;
+}
+
+.btf-ping-btn-group {
+  display: flex;
+  gap: 6px;
+}
+
+.btf-ping-action-btn {
+  flex: 1;
+  padding: 5px 0;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.btf-ping-ok {
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+}
+
+.btf-ping-drift {
+  background: #007AFF;
+  color: #FFFFFF;
+}
+
+.btf-ping-action-btn:hover {
+  opacity: 0.88;
+}
+
+/* 状态进度行 */
+.btf-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btf-status-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.btf-status-label {
   font-size: 10px;
-  padding: 1px 4px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 0.5px solid rgba(255, 255, 255, 0.2);
-  color: #D1D1D6;
+  color: #8E8E93;
 }
 
-/* 微提示浮层 (Toast) */
-.btf-capsule-toast {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+.btf-status-val {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #FFFFFF;
+}
+
+.btf-status-divider {
+  width: 0.5px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btf-text-amber {
+  color: #FF9F0A;
+}
+
+/* ========================================================
+   3. 操作按钮通用样式
+   ======================================================== */
+.btf-action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(28, 28, 30, 0.95);
+  gap: 6px;
+  border-radius: 10px;
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.btf-action-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.btf-action-btn:active {
+  transform: scale(0.97);
+}
+
+.btf-kbd-hint {
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.5);
+  margin-left: auto;
+}
+
+/* 导航区 */
+.btf-nav-row {
+  display: flex;
+  gap: 6px;
+}
+
+.btf-btn-nav {
+  flex: 1;
+  height: 32px;
+  font-size: 12px;
+  padding: 0 10px;
+}
+
+/* 核心动作区：打卡与回神 */
+.btf-core-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btf-btn-checkpoint {
+  height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(255, 159, 10, 0.16);
+  border-color: rgba(255, 159, 10, 0.35);
+  color: #FFB340;
+}
+
+.btf-btn-checkpoint:hover {
+  background: rgba(255, 159, 10, 0.25);
+}
+
+.btf-btn-snapback {
+  height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(0, 122, 255, 0.2);
+  border-color: rgba(0, 122, 255, 0.4);
+  color: #5AC8FA;
+}
+
+.btf-btn-snapback:hover {
+  background: rgba(0, 122, 255, 0.3);
+}
+
+/* 语音行 */
+.btf-tts-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btf-btn-tts {
+  flex: 1;
+  height: 30px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.btf-btn-tts.btf-btn-active {
+  background: rgba(0, 122, 255, 0.25);
+  color: #007AFF;
+  border-color: rgba(0, 122, 255, 0.4);
+}
+
+.btf-rate-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 2px 4px;
+}
+
+.btf-rate-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #8E8E93;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btf-rate-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+}
+
+.btf-rate-display {
+  font-size: 10px;
+  font-weight: 500;
+  color: #D1D1D6;
+  min-width: 26px;
+  text-align: center;
+}
+
+/* 微提示 Toast */
+.btf-card-toast {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(28, 28, 30, 0.94);
   backdrop-filter: blur(25px);
   color: #FFFFFF;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 18px;
 }
 
 .btf-toast-show {

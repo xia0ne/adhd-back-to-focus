@@ -38,13 +38,22 @@
     currentIndex = 0;
     spotlight.init();
 
-    // 初始化灵动胶囊
+    // 初始化 Apple 风格可折叠悬浮控制面板
     capsule = new window.FocusCapsule({
+      onNext: () => {
+        if (currentIndex < blocks.length - 1) updateActiveFocus(currentIndex + 1);
+      },
+      onPrev: () => {
+        if (currentIndex > 0) updateActiveFocus(currentIndex - 1);
+      },
+      onCheckpoint: () => handleMarkCheckpoint(),
       onSnapback: () => handleSnapback(),
+      onToggleTts: () => handleToggleTts(),
+      onChangeRate: (delta) => handleRateChange(delta),
+      onClose: () => disableFocusMode(),
       onContinue: () => {
         capsule.showToast('保持专注中 ✦', 1200);
-      },
-      onToggleTts: () => handleToggleTts()
+      }
     });
 
     // 聚焦首个阅读单元
@@ -236,7 +245,7 @@
   function bindPageInteractions() {
     document.addEventListener('click', (e) => {
       if (!isEnabled) return;
-      if (e.target.closest('#btf-capsule-root')) return;
+      if (e.target.closest('#btf-widget-root, #btf-capsule-root')) return;
 
       const blockEl = e.target.closest('[data-btf-index]');
       if (blockEl && blockEl.dataset.btfIndex !== undefined) {
