@@ -82,7 +82,7 @@ const AIAdapters = {
     const units = [];
     // 递归或层级遍历主要内容节点
     const candidates = container.querySelectorAll(
-      'p, li, pre, blockquote, h1, h2, h3, h4, .katex-display'
+      'p, li, pre, blockquote, h1, h2, h3, h4, tr, .katex-display'
     );
 
     candidates.forEach((el) => {
@@ -91,13 +91,17 @@ const AIAdapters = {
         // 如果是在 li 内部但 li 已经是单位，则避免重复处理
         if (el.closest('li')) return;
       }
+      // 过滤表格单元格内的段落或列表，确保表格以整行 (tr) 为原子阅读单元
+      if ((el.tagName === 'P' || el.tagName === 'LI') && el.closest('tr, td, th, table')) {
+        return;
+      }
       if (el.closest('.btf-collapsed')) {
         // 折叠状态下的思考过程跳过
         return;
       }
 
       const text = el.innerText ? el.innerText.trim() : '';
-      if (text.length < 2 && el.tagName !== 'PRE') return;
+      if (text.length < 2 && el.tagName !== 'PRE' && el.tagName !== 'TR') return;
 
       units.push(el);
     });

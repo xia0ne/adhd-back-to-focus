@@ -62,15 +62,17 @@ const DOMExtractor = {
       elements = window.AIAdapters.extractUnitsFromContainer(this.currentContainer);
     } else {
       // 通用文章提取
-      const candidates = this.currentContainer.querySelectorAll('p, pre, blockquote, h1, h2, h3, h4, li');
+      const candidates = this.currentContainer.querySelectorAll('p, pre, blockquote, h1, h2, h3, h4, li, tr');
       candidates.forEach((el) => {
         // 过滤不可见元素或过小元素
         if (el.offsetParent === null && el.tagName !== 'BODY') return;
         if (el.closest('footer, nav, aside, .comments, #comments')) return;
         if (el.tagName === 'P' && el.closest('pre, li, blockquote')) return;
+        // 过滤表格单元格内的段落或列表，确保表格以整行 (tr) 为原子阅读单元
+        if ((el.tagName === 'P' || el.tagName === 'LI') && el.closest('tr, td, th, table')) return;
 
         const text = el.innerText ? el.innerText.trim() : '';
-        if (text.length < 2 && el.tagName !== 'PRE') return;
+        if (text.length < 2 && el.tagName !== 'PRE' && el.tagName !== 'TR') return;
 
         elements.push(el);
       });
@@ -81,6 +83,7 @@ const DOMExtractor = {
       let type = 'paragraph';
       if (el.tagName === 'PRE') type = 'code';
       else if (el.tagName === 'LI') type = 'list-item';
+      else if (el.tagName === 'TR') type = 'table-row';
       else if (el.tagName.startsWith('H')) type = 'heading';
       else if (el.tagName === 'BLOCKQUOTE') type = 'quote';
 

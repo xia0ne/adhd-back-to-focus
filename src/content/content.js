@@ -271,8 +271,8 @@
     if (isUserInputActive()) return;
     if (e.target.closest('#btf-widget-root, #btf-capsule-root, button, input, a')) return;
 
-    // 寻找被双击文本所在的段落或列表项
-    const targetEl = e.target.closest('p, li, pre, blockquote, h1, h2, h3, h4');
+    // 寻找被双击文本所在的段落、列表项或表格行
+    const targetEl = e.target.closest('tr, p, li, pre, blockquote, h1, h2, h3, h4');
     if (!targetEl) return;
 
     // 清除双击带来的文本选中蓝底

@@ -71,8 +71,15 @@ class SpotlightRenderer {
     badge.innerHTML = '⚓';
     badge.title = '理解检查点';
 
-    // 插入到段落首部
-    element.insertBefore(badge, element.firstChild);
+    // 插入到首部 (如果是表格行，插入到首个单元格内避免破坏表格DOM结构)
+    if (element.tagName === 'TR') {
+      const firstCell = element.querySelector('th, td');
+      if (firstCell) {
+        firstCell.insertBefore(badge, firstCell.firstChild);
+      }
+    } else {
+      element.insertBefore(badge, element.firstChild);
+    }
 
     // 触发轻柔微光涟漪动效
     element.classList.add('btf-pulse-amber');

@@ -13,7 +13,7 @@ body.btf-focus-enabled [data-btf-index] {
 }
 
 /* 活跃当前聚焦段落 - Apple 纯正高对比度与纯净左饰线 */
-body.btf-focus-enabled [data-btf-index].btf-active-block {
+body.btf-focus-enabled [data-btf-index]:not(tr).btf-active-block {
   opacity: 1 !important;
   filter: blur(0px) !important;
   position: relative;
@@ -26,8 +26,29 @@ body.btf-focus-enabled [data-btf-index].btf-active-block {
   transform: scale(1.008);
 }
 
+/* 表格整行聚焦 (Table Row Focus) - 优雅全行高光 */
+body.btf-focus-enabled tr[data-btf-index].btf-active-block {
+  opacity: 1 !important;
+  filter: blur(0px) !important;
+  background-color: rgba(0, 122, 255, 0.09) !important;
+  outline: 2px solid #007AFF !important;
+  outline-offset: -1px;
+}
+
+body.btf-focus-enabled tr[data-btf-index].btf-active-block > td,
+body.btf-focus-enabled tr[data-btf-index].btf-active-block > th {
+  opacity: 1 !important;
+  filter: blur(0px) !important;
+}
+
 /* 邻近前后各一段 - 保留上下文，防止视狭感 */
 body.btf-focus-enabled [data-btf-index].btf-adjacent-block {
+  opacity: 0.55 !important;
+  filter: blur(0px) !important;
+}
+
+body.btf-focus-enabled tr[data-btf-index].btf-adjacent-block > td,
+body.btf-focus-enabled tr[data-btf-index].btf-adjacent-block > th {
   opacity: 0.55 !important;
   filter: blur(0px) !important;
 }
