@@ -8,6 +8,7 @@
 [![Design](https://img.shields.io/badge/Design-Apple_HIG_Aesthetic-000000?style=flat-square&logo=apple&logoColor=white)](#)
 [![Dependencies](https://img.shields.io/badge/Dependencies-Zero_Dependency-success?style=flat-square)](#)
 [![Privacy](https://img.shields.io/badge/Privacy-100%25_Local_Only-blueviolet?style=flat-square)](#)
+[![Build and Package](https://github.com/xia0ne/adhd-back-to-focus/actions/workflows/package.yml/badge.svg)](https://github.com/xia0ne/adhd-back-to-focus/actions/workflows/package.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-amber.svg?style=flat-square)](LICENSE)
 
 <br />

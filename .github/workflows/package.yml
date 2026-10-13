@@ -1,0 +1,62 @@
+name: Build and Package Extension
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  validate-and-package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate Manifest & JS Syntax
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('manifest.json'))"
+          node -c src/background/*.js
+          node -c src/content/*.js
+          node -c src/popup/*.js
+          echo "All JS & JSON syntax verified successfully!"
+
+      - name: Extract Extension Version
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./manifest.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Extension version is $VERSION"
+
+      - name: Package Chrome Extension (.zip)
+        run: |
+          ZIP_NAME="adhd-back-to-focus-v${{ env.VERSION }}.zip"
+          zip -r "$ZIP_NAME" manifest.json icons src README.md LICENSE -x "*.DS_Store" "*__MACOSX*"
+          echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_ENV
+          ls -lh "$ZIP_NAME"
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: adhd-back-to-focus-v${{ env.VERSION }}
+          path: ${{ env.ZIP_NAME }}
+          retention-days: 14
+
+      - name: Create GitHub Release (on Tag Push)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ZIP_NAME }}
+          generate_release_notes: true
+          name: Release v${{ env.VERSION }}
