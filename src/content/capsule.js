@@ -4,7 +4,7 @@
  */
 
 class FocusCapsule {
-  constructor({ onNext, onPrev, onCheckpoint, onSnapback, onToggleTts, onChangeRate, onClose, onContinue }) {
+  constructor({ onNext, onPrev, onCheckpoint, onSnapback, onClose, onContinue }) {
     this.container = null;
     this.timer = null;
     this.pingIntervalMs = 2 * 60 * 1000; // 默认 2 分钟
@@ -12,16 +12,15 @@ class FocusCapsule {
     this.onPrev = onPrev;
     this.onCheckpoint = onCheckpoint;
     this.onSnapback = onSnapback;
-    this.onToggleTts = onToggleTts;
-    this.onChangeRate = onChangeRate;
     this.onClose = onClose;
     this.onContinue = onContinue;
 
-    this.isCollapsed = false; // 是否处于折叠微型药丸态
-    this.isPingActive = false; // 是否正在弹出注意力检查
-    this.currentData = { current: 0, total: 1, checkpoint: null, ttsRate: 1.2, isTtsPlaying: false };
+    this.isCollapsed = false;
+    this.isPingActive = false;
+    this.currentData = { current: 0, total: 1, checkpoint: null };
 
     this.render();
+    this.restoreSavedPosition();
     this.setupDraggable();
     this.startPingTimer();
   }
@@ -34,7 +33,7 @@ class FocusCapsule {
     root.className = 'btf-widget-root';
 
     root.innerHTML = `
-      <!-- 折叠态：微型药丸 -->
+      <!-- 折叠态：微型药丸 (可拖拽，点击展开) -->
       <div class="btf-mini-pill" id="btf-mini-pill" title="点击展开回神面板 (可拖拽)">
         <span class="btf-mini-logo">⚓</span>
         <span class="btf-mini-text" id="btf-mini-pos">01/01</span>
@@ -43,7 +42,7 @@ class FocusCapsule {
 
       <!-- 展开态：Apple 风格悬浮控制卡片 -->
       <div class="btf-card" id="btf-card">
-        <!-- 头部 (拖拽把手与折叠) -->
+        <!-- 头部 (拖拽把手与折叠控制) -->
         <div class="btf-card-header" id="btf-card-drag-handle">
           <div class="btf-card-title">
             <span class="btf-logo-dot"></span>
@@ -67,7 +66,7 @@ class FocusCapsule {
           </div>
         </div>
 
-        <!-- 状态进度条 -->
+        <!-- 状态进度行 -->
         <div class="btf-status-row">
           <div class="btf-status-item">
             <span class="btf-status-label">当前进度</span>
@@ -80,7 +79,13 @@ class FocusCapsule {
           </div>
         </div>
 
-        <!-- 操作区 1: 逐段导航 (大按键，易点击) -->
+        <!-- 段落字数与阅读预估时间 (ADHD 时间感知锚点，降低心理负担) -->
+        <div class="btf-pacing-row" id="btf-pacing-row">
+          <span class="btf-pacing-icon">⏱</span>
+          <span class="btf-pacing-text" id="btf-pacing-text">准备开始阅读</span>
+        </div>
+
+        <!-- 操作区 1: 逐段导航 (大按键，点击直接平滑吸附定位) -->
         <div class="btf-nav-row">
           <button class="btf-action-btn btf-btn-nav" id="btf-btn-prev">
             <span>↑ 上一段</span>
@@ -104,20 +109,6 @@ class FocusCapsule {
             <span class="btf-btn-text" id="btf-snapback-text">一键回神</span>
             <kbd class="btf-kbd-hint">R</kbd>
           </button>
-        </div>
-
-        <!-- 操作区 3: 语音辅助阅读与语速 -->
-        <div class="btf-tts-row">
-          <button class="btf-action-btn btf-btn-tts" id="btf-btn-tts">
-            <span id="btf-tts-icon">🔊</span>
-            <span id="btf-tts-text">语音辅助朗读</span>
-            <kbd class="btf-kbd-hint">S</kbd>
-          </button>
-          <div class="btf-rate-ctrl">
-            <button class="btf-rate-btn" id="btf-rate-down" title="减速 (快捷键 [)">-</button>
-            <span class="btf-rate-display" id="btf-rate-display">1.2x</span>
-            <button class="btf-rate-btn" id="btf-rate-up" title="加速 (快捷键 ])">+</button>
-          </div>
         </div>
 
         <!-- 临时微反馈 Toast -->
@@ -172,22 +163,6 @@ class FocusCapsule {
       if (this.onSnapback) this.onSnapback();
     });
 
-    // 语音与语速
-    root.querySelector('#btf-btn-tts').addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (this.onToggleTts) this.onToggleTts();
-    });
-
-    root.querySelector('#btf-rate-down').addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (this.onChangeRate) this.onChangeRate(-0.1);
-    });
-
-    root.querySelector('#btf-rate-up').addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (this.onChangeRate) this.onChangeRate(0.1);
-    });
-
     // 唤醒横幅动作
     root.querySelector('#btf-ping-ok').addEventListener('click', (e) => {
       e.stopPropagation();
@@ -208,15 +183,15 @@ class FocusCapsule {
     const pill = document.getElementById('btf-mini-pill');
 
     if (collapsed) {
-      card.style.display = 'none';
-      pill.style.display = 'flex';
+      if (card) card.style.display = 'none';
+      if (pill) pill.style.display = 'flex';
     } else {
-      pill.style.display = 'none';
-      card.style.display = 'flex';
+      if (pill) pill.style.display = 'none';
+      if (card) card.style.display = 'flex';
     }
   }
 
-  updateProgress(current, total, checkpoint) {
+  updateProgress(current, total, checkpoint, activeBlock = null) {
     this.currentData.current = current;
     this.currentData.total = total;
     this.currentData.checkpoint = checkpoint;
@@ -225,6 +200,7 @@ class FocusCapsule {
     const valProgress = document.getElementById('btf-val-progress');
     const valCheckpoint = document.getElementById('btf-val-checkpoint');
     const snapbackText = document.getElementById('btf-snapback-text');
+    const pacingText = document.getElementById('btf-pacing-text');
 
     const formattedProgress = `${String(current + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
     if (miniPos) miniPos.textContent = formattedProgress;
@@ -246,23 +222,19 @@ class FocusCapsule {
         snapbackText.textContent = '一键回神';
       }
     }
-  }
 
-  updateTtsState(rate, isPlaying) {
-    this.currentData.ttsRate = rate;
-    this.currentData.isTtsPlaying = isPlaying;
-
-    const rateDisplay = document.getElementById('btf-rate-display');
-    const ttsBtn = document.getElementById('btf-btn-tts');
-    const ttsText = document.getElementById('btf-tts-text');
-
-    if (rateDisplay) rateDisplay.textContent = `${rate}x`;
-    if (ttsBtn) ttsBtn.classList.toggle('btf-btn-active', isPlaying);
-    if (ttsText) ttsText.textContent = isPlaying ? '暂停朗读' : '语音朗读';
-  }
-
-  updateTtsRate(rate, isPlaying) {
-    this.updateTtsState(rate, isPlaying);
+    // 计算当前段落阅读预估时长
+    if (pacingText && activeBlock && activeBlock.text) {
+      const charCount = activeBlock.text.length;
+      // 中文平均阅读速度约 350-400字/分 (约 6字/秒)
+      const estSeconds = Math.max(4, Math.round(charCount / 6));
+      if (estSeconds < 60) {
+        pacingText.textContent = `本段约 ${estSeconds} 秒 · ${charCount} 字`;
+      } else {
+        const mins = (estSeconds / 60).toFixed(1);
+        pacingText.textContent = `本段约 ${mins} 分钟 · ${charCount} 字`;
+      }
+    }
   }
 
   showToast(message, duration = 1500) {
@@ -278,7 +250,30 @@ class FocusCapsule {
     }, duration);
   }
 
-  // 拖拽支持 (支持拖拽卡片或小胶囊至屏幕任意角落)
+  // 恢复之前保存的拖拽位置
+  restoreSavedPosition() {
+    try {
+      const saved = localStorage.getItem('btf_widget_position');
+      if (saved) {
+        const { left, top } = JSON.parse(saved);
+        if (typeof left === 'number' && typeof top === 'number') {
+          // 确保位置在当前可视窗口内
+          const maxLeft = window.innerWidth - 80;
+          const maxTop = window.innerHeight - 50;
+          const safeLeft = Math.max(10, Math.min(maxLeft, left));
+          const safeTop = Math.max(10, Math.min(maxTop, top));
+
+          this.container.style.left = `${safeLeft}px`;
+          this.container.style.top = `${safeTop}px`;
+          this.container.style.right = 'auto';
+          this.container.style.bottom = 'auto';
+          this.container.style.transform = 'none';
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 拖拽支持 (支持拖拽卡片或小胶囊至屏幕任意位置并记忆)
   setupDraggable() {
     const root = this.container;
     let isDragging = false;
@@ -286,7 +281,6 @@ class FocusCapsule {
     let initialLeft = 0, initialTop = 0;
 
     const onMouseDown = (e) => {
-      // 避免在按钮上触发拖拽
       if (e.target.closest('button, kbd, input')) return;
 
       isDragging = true;
@@ -318,12 +312,18 @@ class FocusCapsule {
     };
 
     const onMouseUp = () => {
+      if (!isDragging) return;
       isDragging = false;
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
+
+      // 持久化保存位置
+      try {
+        const rect = root.getBoundingClientRect();
+        localStorage.setItem('btf_widget_position', JSON.stringify({ left: rect.left, top: rect.top }));
+      } catch (e) {}
     };
 
-    // 头部把手和小球支持拖拽
     const handle = root.querySelector('#btf-card-drag-handle');
     const miniPill = root.querySelector('#btf-mini-pill');
     if (handle) handle.addEventListener('mousedown', onMouseDown);
@@ -350,7 +350,6 @@ class FocusCapsule {
   }
 
   triggerMindfulnessPing() {
-    // 若当前是折叠态，唤醒时自动展开卡片展示提醒
     if (this.isCollapsed) {
       this.setCollapsed(false);
     }
@@ -361,7 +360,6 @@ class FocusCapsule {
       this.isPingActive = true;
     }
 
-    // 12 秒后若无操作自动隐退
     clearTimeout(this.autoDismissTimer);
     this.autoDismissTimer = setTimeout(() => {
       this.dismissPing();

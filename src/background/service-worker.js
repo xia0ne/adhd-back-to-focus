@@ -5,7 +5,6 @@
 
 const DEFAULT_SETTINGS = {
   pingIntervalMinutes: 2,
-  ttsRate: 1.2,
   dimOpacity: 0.2,
   autoFoldThinking: true,
   autoScroll: true

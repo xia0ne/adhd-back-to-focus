@@ -11,7 +11,6 @@
   let extractor = window.DOMExtractor;
   let spotlight = new window.SpotlightRenderer();
   let checkpointMgr = new window.CheckpointManager();
-  let tts = new window.TTSEngine();
   let capsule = null;
 
   // 检查当前焦点是否在输入表单中（防止打字时触发快捷键）
@@ -24,9 +23,14 @@
     return false;
   }
 
-  // 启动聚焦模式
-  function enableFocusMode() {
-    if (isEnabled) return;
+  // 启动聚焦模式 (支持指定初始段落索引)
+  function enableFocusMode(targetIndex = 0) {
+    if (isEnabled) {
+      if (typeof targetIndex === 'number' && targetIndex >= 0 && targetIndex < blocks.length) {
+        updateActiveFocus(targetIndex);
+      }
+      return;
+    }
     
     blocks = extractor.scanAndIndex();
     if (!blocks || blocks.length === 0) {
@@ -35,7 +39,7 @@
     }
 
     isEnabled = true;
-    currentIndex = 0;
+    currentIndex = Math.max(0, Math.min(blocks.length - 1, targetIndex));
     spotlight.init();
 
     // 初始化 Apple 风格可折叠悬浮控制面板
@@ -48,16 +52,14 @@
       },
       onCheckpoint: () => handleMarkCheckpoint(),
       onSnapback: () => handleSnapback(),
-      onToggleTts: () => handleToggleTts(),
-      onChangeRate: (delta) => handleRateChange(delta),
       onClose: () => disableFocusMode(),
       onContinue: () => {
         capsule.showToast('保持专注中 ✦', 1200);
       }
     });
 
-    // 聚焦首个阅读单元
-    updateActiveFocus(0);
+    // 聚焦首个或指定阅读单元
+    updateActiveFocus(currentIndex);
     bindPageInteractions();
   }
 
@@ -65,7 +67,6 @@
   function disableFocusMode() {
     if (!isEnabled) return;
     isEnabled = false;
-    tts.stop();
     spotlight.destroy();
     if (capsule) {
       capsule.destroy();
@@ -76,10 +77,10 @@
 
   function toggleFocusMode() {
     if (isEnabled) disableFocusMode();
-    else enableFocusMode();
+    else enableFocusMode(0);
   }
 
-  // 更新当前聚焦
+  // 更新当前聚焦，并自动平滑跳转视口
   function updateActiveFocus(index) {
     if (index < 0 || index >= blocks.length) return;
 
@@ -87,16 +88,12 @@
     checkpointMgr.setCurrentIndex(index);
     const activeBlock = blocks[index];
 
+    // 聚光灯高亮与平滑视线居中
     spotlight.focus(activeBlock, blocks);
-    if (capsule) {
-      capsule.updateProgress(currentIndex, blocks.length, checkpointMgr.getCheckpoint());
-    }
 
-    // 若当前正在播放朗读，切段时自动接续朗读新段落
-    if (tts.isPlaying) {
-      tts.speak(activeBlock.text, () => {
-        // 可选：朗读完后可自动推进下一段
-      });
+    // 同步更新悬浮框进度与预估时间
+    if (capsule) {
+      capsule.updateProgress(currentIndex, blocks.length, checkpointMgr.getCheckpoint(), activeBlock);
     }
   }
 
@@ -107,7 +104,7 @@
       const activeBlock = blocks[currentIndex];
       spotlight.markCheckpointBadge(activeBlock.element);
       if (capsule) {
-        capsule.updateProgress(currentIndex, blocks.length, res.index);
+        capsule.updateProgress(currentIndex, blocks.length, res.index, activeBlock);
         capsule.showToast(`⚓ 已签收理解 (第 ${currentIndex + 1} 段)`, 1500);
         capsule.resetPingTimer();
       }
@@ -120,8 +117,15 @@
     const fromBlock = blocks[currentIndex];
     const toBlock = blocks[targetIndex];
 
-    tts.stop();
-    spotlight.triggerSnapbackEffect(fromBlock.element, toBlock.element);
+    // 收集被跳过的段落元素，给予迷雾切断动效
+    const skippedElements = [];
+    if (targetIndex < currentIndex) {
+      for (let i = targetIndex + 1; i <= currentIndex; i++) {
+        if (blocks[i]) skippedElements.push(blocks[i].element);
+      }
+    }
+
+    spotlight.triggerSnapbackEffect(fromBlock.element, toBlock.element, skippedElements);
     updateActiveFocus(targetIndex);
 
     if (capsule) {
@@ -130,30 +134,6 @@
       } else {
         capsule.showToast(`已在最新检查点 (第 ${targetIndex + 1} 段)`, 1500);
       }
-    }
-  }
-
-  // 切换朗读 (S)
-  function handleToggleTts() {
-    const activeBlock = blocks[currentIndex];
-    if (!activeBlock) return;
-
-    const isPlaying = tts.toggle(activeBlock.text, () => {
-      if (capsule) capsule.updateTtsRate(tts.rate, false);
-    });
-
-    if (capsule) {
-      capsule.updateTtsRate(tts.rate, isPlaying);
-      capsule.showToast(isPlaying ? `开始朗读 (${tts.rate}x)` : '已暂停朗读', 1200);
-    }
-  }
-
-  // 语速微调 ([ / ])
-  function handleRateChange(delta) {
-    const newRate = tts.changeRate(delta);
-    if (capsule) {
-      capsule.updateTtsRate(newRate, tts.isPlaying);
-      capsule.showToast(`语速: ${newRate}x`, 1000);
     }
   }
 
@@ -166,7 +146,7 @@
     if (!isEnabled) {
       if ((e.altKey || e.metaKey) && (e.key === 'f' || e.key === 'F')) {
         e.preventDefault();
-        enableFocusMode();
+        enableFocusMode(0);
       }
       return;
     }
@@ -218,22 +198,6 @@
         handleSnapback();
         break;
 
-      case 's':
-      case 'S':
-        e.preventDefault();
-        handleToggleTts();
-        break;
-
-      case '[':
-        e.preventDefault();
-        handleRateChange(-0.1);
-        break;
-
-      case ']':
-        e.preventDefault();
-        handleRateChange(0.1);
-        break;
-
       case 'Escape':
         e.preventDefault();
         disableFocusMode();
@@ -256,6 +220,30 @@
       }
     });
   }
+
+  // 全局双击快速进入聚焦 (Zero-friction entry)
+  document.addEventListener('dblclick', (e) => {
+    if (isUserInputActive()) return;
+    if (e.target.closest('#btf-widget-root, #btf-capsule-root, button, input, a')) return;
+
+    // 寻找被双击文本所在的段落或列表项
+    const targetEl = e.target.closest('p, li, pre, blockquote, h1, h2, h3, h4');
+    if (!targetEl) return;
+
+    if (!isEnabled) {
+      // 开启聚焦并定位到被双击的段落
+      enableFocusMode(0);
+      const matchedIdx = blocks.findIndex(b => b.element === targetEl || b.element.contains(targetEl));
+      if (matchedIdx !== -1) {
+        updateActiveFocus(matchedIdx);
+      }
+    } else {
+      const matchedIdx = blocks.findIndex(b => b.element === targetEl || b.element.contains(targetEl));
+      if (matchedIdx !== -1 && matchedIdx !== currentIndex) {
+        updateActiveFocus(matchedIdx);
+      }
+    }
+  });
 
   // 监听来自 Service Worker 或 Popup 的通信指令
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

@@ -44,15 +44,16 @@ class SpotlightRenderer {
   }
 
   smoothScrollToComfortZone(element) {
-    const rect = element.getBoundingClientRect();
-    const targetOffset = window.innerHeight * 0.30;
-    const currentTop = window.scrollY;
-    const destination = currentTop + rect.top - targetOffset;
-
-    window.scrollTo({
-      top: Math.max(0, destination),
-      behavior: 'smooth'
-    });
+    if (!element) return;
+    try {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+    } catch (e) {
+      element.scrollIntoView(true);
+    }
   }
 
   // 为段落打上理解检查点 (C)
@@ -80,13 +81,24 @@ class SpotlightRenderer {
     }, 800);
   }
 
-  // 一键回神 (R) 动效反馈
-  triggerSnapbackEffect(fromElement, toElement) {
+  // 一键回神 (R) 动效反馈与迷雾切断
+  triggerSnapbackEffect(fromElement, toElement, skippedElements = []) {
     if (toElement) {
       toElement.classList.add('btf-snapback-target');
       setTimeout(() => {
         toElement.classList.remove('btf-snapback-target');
       }, 1200);
+    }
+
+    // 将刚才走神滑过的段落施加切断动效
+    if (Array.isArray(skippedElements)) {
+      skippedElements.forEach((el) => {
+        if (!el) return;
+        el.classList.add('btf-drift-fog');
+        setTimeout(() => {
+          el.classList.remove('btf-drift-fog');
+        }, 1500);
+      });
     }
   }
 

@@ -82,6 +82,22 @@ body.btf-focus-enabled [data-btf-index].btf-adjacent-block {
   animation: btfSnapbackArrival 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* 一键回神时被跳过的走神段落 - 迷雾切断动效 */
+@keyframes btfFogFade {
+  0% {
+    opacity: 0.08;
+    border-left: 2px dashed rgba(255, 159, 10, 0.5);
+  }
+  100% {
+    opacity: 0.22;
+    border-left: none;
+  }
+}
+
+.btf-drift-fog {
+  animation: btfFogFade 1.4s ease-out;
+}
+
 /* AI 思考过程 (Thinking Block) 极简折叠胶囊 */
 .btf-thinking-block {
   margin: 10px 0;
