@@ -5,23 +5,27 @@
  */
 
 class FocusCapsule {
-  constructor({ onNext, onPrev, onCheckpoint, onSnapback, onClose, onContinue, onRestart }) {
+  constructor({ onNext, onPrev, onCheckpoint, onSnapback, onClose, onRestart }) {
     this.container = null;
-    this.timer = null;
-    this.pingIntervalMs = 2 * 60 * 1000; // 默认 2 分钟
     this.onNext = onNext;
     this.onPrev = onPrev;
     this.onCheckpoint = onCheckpoint;
     this.onSnapback = onSnapback;
     this.onClose = onClose;
-    this.onContinue = onContinue;
     this.onRestart = onRestart;
 
     this.isCollapsed = false;
-    this.isPingActive = false;
-    this.currentData = { current: 0, total: 1, checkpoint: null };
+    this.awaitingBreak = false;
+    this.currentData = {
+      current: 0,
+      total: 1,
+      checkpoint: null,
+      sustainedIndex: null,
+      checkpointMarkedAt: null,
+      snapbackIndex: 0
+    };
 
-    // 初始化 ADHD 专注冲刺番茄钟
+    // 初始化 ADHD 专注冲刺番茄钟。控件只留在折叠胶囊上。
     this.pomodoro = new window.PomodoroTimer({
       onTick: (data) => this.updatePomodoroUI(data),
       onFocusComplete: () => this.handlePomodoroFocusComplete(),
@@ -31,7 +35,7 @@ class FocusCapsule {
     this.render();
     this.restoreSavedPosition();
     this.setupDraggable();
-    this.startPingTimer();
+    this.ageTimer = setInterval(() => this.renderMeta(), 30000);
   }
 
   render() {
@@ -46,13 +50,13 @@ class FocusCapsule {
       <div class="btf-mini-pill" id="btf-mini-pill" title="点击展开回神面板 (可拖拽)">
         <span class="btf-mini-logo">⚓</span>
         <span class="btf-mini-text" id="btf-mini-pos">01/01</span>
-        <span class="btf-mini-pomo" id="btf-mini-pomo">⏳ 15:00</span>
+        <span class="btf-mini-pomo" id="btf-mini-pomo" title="单击开始或暂停，双击切换 10 / 15 / 25 分钟">⏳ 15:00</span>
         <span class="btf-mini-expand">⤢</span>
       </div>
 
       <!-- 展开态：Apple 风格悬浮控制卡片 -->
       <div class="btf-card" id="btf-card">
-        <!-- 头部 (拖拽把手、番茄冲刺胶囊与折叠控制) -->
+        <!-- 头部 (拖拽把手与折叠控制) -->
         <div class="btf-card-header" id="btf-card-drag-handle">
           <div class="btf-card-title">
             <span class="btf-logo-dot"></span>
@@ -60,37 +64,8 @@ class FocusCapsule {
           </div>
           
           <div class="btf-header-actions">
-            <!-- ADHD 专注冲刺番茄钟胶囊 -->
-            <div class="btf-pomodoro-pill" id="btf-pomo-pill" title="单击: 开始/暂停专注 | 双击: 切换 10 / 15 / 25 分钟">
-              <span class="btf-pomo-icon" id="btf-pomo-icon">⏳</span>
-              <span class="btf-pomo-time" id="btf-pomo-time">15:00</span>
-            </div>
-            
             <button class="btf-icon-btn" id="btf-btn-minimize" title="折叠为小胶囊">─</button>
             <button class="btf-icon-btn" id="btf-btn-close" title="退出聚焦模式">✕</button>
-          </div>
-        </div>
-
-        <!-- 番茄钟休息提醒横幅 (冲刺完成后滑出) -->
-        <div class="btf-pomo-banner" id="btf-pomo-banner">
-          <div class="btf-pomo-prompt">
-            <span>✨ 冲刺达成！给大脑深呼吸 3 分钟 ☕</span>
-          </div>
-          <div class="btf-pomo-btn-group">
-            <button class="btf-pomo-action-btn btf-pomo-break-btn" id="btf-btn-pomo-break">开始休息 (3分)</button>
-            <button class="btf-pomo-action-btn btf-pomo-continue-btn" id="btf-btn-pomo-continue">继续阅读</button>
-          </div>
-        </div>
-
-        <!-- 注意力唤醒横幅 (默认隐藏，定时弹出) -->
-        <div class="btf-ping-banner" id="btf-ping-banner">
-          <div class="btf-ping-prompt">
-            <span class="btf-ping-pulse"></span>
-            <span>思维跟上了吗？</span>
-          </div>
-          <div class="btf-ping-btn-group">
-            <button class="btf-ping-action-btn btf-ping-ok" id="btf-ping-ok">还在读</button>
-            <button class="btf-ping-action-btn btf-ping-drift" id="btf-ping-drift">走神了 (回神)</button>
           </div>
         </div>
 
@@ -108,6 +83,11 @@ class FocusCapsule {
             <span class="btf-status-label">理解检查点</span>
             <span class="btf-status-val btf-text-amber" id="btf-val-checkpoint">未设定</span>
           </div>
+        </div>
+
+        <div class="btf-meta-block">
+          <div class="btf-meta-line" id="btf-sustained-line">上次停下 · 还没有</div>
+          <div class="btf-meta-line" id="btf-check-age">距上次签收 · 还没有</div>
         </div>
 
         <!-- 段落字数与阅读预估时间 (ADHD 时间感知锚点，降低心理负担) -->
@@ -200,96 +180,66 @@ class FocusCapsule {
       if (this.onRestart) this.onRestart();
     });
 
-    // 番茄冲刺钟操作：单击启停，双击换挡
-    const pomoPill = root.querySelector('#btf-pomo-pill');
+    // 番茄钟只挂在折叠胶囊的计时上：单击启停，双击换挡
+    const miniPomo = root.querySelector('#btf-mini-pomo');
     let clickTimeout = null;
-    pomoPill.addEventListener('click', (e) => {
+    miniPomo.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (this.pomodoro.state === 'BREAK') return;
       if (clickTimeout) {
         clearTimeout(clickTimeout);
         clickTimeout = null;
-        // 双击：换挡 (15m -> 10m -> 25m)
+        this.awaitingBreak = false;
         this.pomodoro.cycleDuration();
         this.showToast(`冲刺时长: ${this.pomodoro.focusMinutes} 分钟`, 1000);
       } else {
         clickTimeout = setTimeout(() => {
           clickTimeout = null;
-          // 单击：启停
+          if (this.awaitingBreak) {
+            this.awaitingBreak = false;
+            this.pomodoro.startBreak(3);
+            this.showToast('开启 3 分钟放松休息 ☕', 1500);
+            return;
+          }
           this.pomodoro.toggle();
           const running = this.pomodoro.state === 'RUNNING';
           this.showToast(running ? '专注计时已开启' : '计时已暂停', 1000);
         }, 220);
       }
     });
-
-    // 休息横幅按钮
-    root.querySelector('#btf-btn-pomo-break').addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.dismissPomodoroBanner();
-      this.pomodoro.startBreak(3);
-      this.showToast('开启 3 分钟放松休息 ☕', 1500);
-    });
-
-    root.querySelector('#btf-btn-pomo-continue').addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.dismissPomodoroBanner();
-      this.pomodoro.reset();
-    });
-
-    // 唤醒横幅动作
-    root.querySelector('#btf-ping-ok').addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.dismissPing();
-      if (this.onContinue) this.onContinue();
-    });
-
-    root.querySelector('#btf-ping-drift').addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.dismissPing();
-      if (this.onSnapback) this.onSnapback();
-    });
   }
 
   updatePomodoroUI({ formatted, state }) {
-    const timeEl = document.getElementById('btf-pomo-time');
-    const iconEl = document.getElementById('btf-pomo-icon');
-    const pillEl = document.getElementById('btf-pomo-pill');
     const miniPomo = document.getElementById('btf-mini-pomo');
+    if (!miniPomo) return;
 
-    if (timeEl) timeEl.textContent = formatted;
-    if (miniPomo) miniPomo.textContent = `${state === 'BREAK' ? '☕' : '⏳'} ${formatted}`;
+    if (this.awaitingBreak) {
+      miniPomo.textContent = '☕ 休息';
+      miniPomo.title = '单击开始 3 分钟休息';
+      miniPomo.classList.add('btf-pomo-done');
+      miniPomo.classList.remove('btf-pomo-running', 'btf-pomo-break');
+      return;
+    }
 
-    if (pillEl) {
-      pillEl.classList.toggle('btf-pomo-running', state === 'RUNNING');
-      pillEl.classList.toggle('btf-pomo-break', state === 'BREAK');
-    }
-    if (iconEl) {
-      if (state === 'BREAK') iconEl.textContent = '☕';
-      else if (state === 'RUNNING') iconEl.textContent = '🔥';
-      else iconEl.textContent = '⏳';
-    }
+    const icon = state === 'BREAK' ? '☕' : '⏳';
+    miniPomo.textContent = `${icon} ${formatted}`;
+    miniPomo.title = state === 'BREAK'
+      ? '休息中'
+      : '单击开始或暂停，双击切换 10 / 15 / 25 分钟';
+    miniPomo.classList.toggle('btf-pomo-running', state === 'RUNNING');
+    miniPomo.classList.toggle('btf-pomo-break', state === 'BREAK');
+    miniPomo.classList.remove('btf-pomo-done');
   }
 
   handlePomodoroFocusComplete() {
-    if (this.isCollapsed) {
-      this.setCollapsed(false);
-    }
-    const banner = document.getElementById('btf-pomo-banner');
-    if (banner) {
-      banner.classList.add('btf-pomo-visible');
-    }
+    this.awaitingBreak = true;
+    this.updatePomodoroUI({ formatted: '00:00', state: 'IDLE' });
+    this.showToast('冲刺达成。点胶囊上的计时，休息 3 分钟', 2200);
   }
 
   handlePomodoroBreakComplete() {
-    this.showToast('休息结束，准备好重新回神了吗？✦', 2000);
-    this.dismissPomodoroBanner();
-  }
-
-  dismissPomodoroBanner() {
-    const banner = document.getElementById('btf-pomo-banner');
-    if (banner) {
-      banner.classList.remove('btf-pomo-visible');
-    }
+    this.awaitingBreak = false;
+    this.showToast('休息结束，可以继续读了 ✦', 2000);
   }
 
   setCollapsed(collapsed) {
@@ -306,10 +256,19 @@ class FocusCapsule {
     }
   }
 
-  updateProgress(current, total, checkpoint, activeBlock = null) {
+  updateProgress(current, total, checkpoint, activeBlock = null, extra = {}) {
     this.currentData.current = current;
     this.currentData.total = total;
     this.currentData.checkpoint = checkpoint;
+    this.currentData.sustainedIndex = Object.prototype.hasOwnProperty.call(extra, 'sustainedIndex')
+      ? extra.sustainedIndex
+      : this.currentData.sustainedIndex;
+    this.currentData.checkpointMarkedAt = Object.prototype.hasOwnProperty.call(extra, 'checkpointMarkedAt')
+      ? extra.checkpointMarkedAt
+      : this.currentData.checkpointMarkedAt;
+    this.currentData.snapbackIndex = Object.prototype.hasOwnProperty.call(extra, 'snapbackIndex')
+      ? extra.snapbackIndex
+      : checkpoint;
 
     const miniPos = document.getElementById('btf-mini-pos');
     const valProgress = document.getElementById('btf-val-progress');
@@ -329,14 +288,16 @@ class FocusCapsule {
       }
     }
 
+    const snapbackIndex = this.currentData.snapbackIndex;
     if (snapbackText) {
-      if (checkpoint !== null && checkpoint !== undefined && checkpoint < current) {
-        const delta = current - checkpoint;
-        snapbackText.textContent = `一键回神 (退 ${delta} 段)`;
+      if (typeof snapbackIndex === 'number' && snapbackIndex < current) {
+        snapbackText.textContent = `一键回神 (退 ${current - snapbackIndex} 段)`;
       } else {
         snapbackText.textContent = '一键回神';
       }
     }
+
+    this.renderMeta();
 
     // 计算当前段落阅读预估时长
     if (pacingText && activeBlock && activeBlock.text) {
@@ -350,6 +311,41 @@ class FocusCapsule {
         pacingText.textContent = `本段约 ${mins} 分钟 · ${charCount} 字`;
       }
     }
+  }
+
+  renderMeta() {
+    const sustainedLine = document.getElementById('btf-sustained-line');
+    const ageLine = document.getElementById('btf-check-age');
+    const sustained = this.currentData.sustainedIndex;
+    const markedAt = this.currentData.checkpoint === null || this.currentData.checkpoint === undefined
+      ? null
+      : this.currentData.checkpointMarkedAt;
+
+    if (sustainedLine) {
+      if (typeof sustained === 'number') {
+        sustainedLine.textContent = sustained === this.currentData.current
+          ? '上次停下 · 就在这段'
+          : `上次停下 · 第 ${sustained + 1} 段`;
+      } else {
+        sustainedLine.textContent = '上次停下 · 还没有';
+      }
+    }
+
+    if (ageLine) {
+      ageLine.textContent = this.formatCheckpointAge(markedAt);
+    }
+  }
+
+  formatCheckpointAge(timestamp) {
+    if (!timestamp) return '距上次签收 · 还没有';
+    const seconds = Math.max(0, Math.round((Date.now() - timestamp) / 1000));
+    if (seconds < 45) return '距上次签收 · 刚刚';
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `距上次签收 · ${minutes} 分钟`;
+    const hours = Math.floor(minutes / 60);
+    const remain = minutes % 60;
+    if (remain === 0) return `距上次签收 · ${hours} 小时`;
+    return `距上次签收 · ${hours} 小时 ${remain} 分钟`;
   }
 
   showToast(message, duration = 1500) {
@@ -395,7 +391,7 @@ class FocusCapsule {
     let initialLeft = 0, initialTop = 0;
 
     const onMouseDown = (e) => {
-      if (e.target.closest('button, kbd, input, .btf-pomodoro-pill')) return;
+      if (e.target.closest('button, kbd, input, #btf-mini-pomo')) return;
 
       isDragging = true;
       startX = e.clientX;
@@ -444,66 +440,12 @@ class FocusCapsule {
     if (miniPill) miniPill.addEventListener('mousedown', onMouseDown);
   }
 
-  startPingTimer() {
-    this.stopPingTimer();
-    this.timer = setTimeout(() => {
-      this.triggerMindfulnessPing();
-    }, this.pingIntervalMs);
-  }
-
-  stopPingTimer() {
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
-    }
-  }
-
-  resetPingTimer() {
-    this.dismissPing();
-    this.startPingTimer();
-  }
-
-  triggerMindfulnessPing() {
-    if (this.isCollapsed) {
-      this.setCollapsed(false);
-    }
-
-    const banner = document.getElementById('btf-ping-banner');
-    if (banner) {
-      banner.classList.add('btf-ping-visible');
-      this.isPingActive = true;
-    }
-
-    clearTimeout(this.autoDismissTimer);
-    this.autoDismissTimer = setTimeout(() => {
-      this.dismissPing();
-    }, 12000);
-  }
-
-  dismissPing() {
-    const banner = document.getElementById('btf-ping-banner');
-    if (banner) {
-      banner.classList.remove('btf-ping-visible');
-    }
-    this.isPingActive = false;
-    this.startPingTimer();
-  }
-
-  collapsePing() {
-    this.dismissPing();
-  }
-
-  get isExpanded() {
-    return this.isPingActive;
-  }
-
   destroy() {
-    this.stopPingTimer();
     if (this.pomodoro) {
       this.pomodoro.destroy();
     }
+    clearInterval(this.ageTimer);
     clearTimeout(this.toastTimer);
-    clearTimeout(this.autoDismissTimer);
     if (this.container) {
       this.container.remove();
       this.container = null;

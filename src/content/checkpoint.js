@@ -7,20 +7,23 @@ class CheckpointManager {
   constructor() {
     this.currentIndex = 0;
     this.checkpointIndex = null;
-    this.sustainedIndex = 0; // 最近一次慢速有效阅读段落（保底）
+    this.checkpointMarkedAt = null;
+    this.sustainedIndex = null; // 最近一次停留满 8 秒的段落；没有停过就是 null
     this.lastMoveTimestamp = Date.now();
+    this.scopeContainer = null;
+    this.scopeId = '';
   }
 
   reset() {
     this.currentIndex = 0;
     this.checkpointIndex = null;
-    this.sustainedIndex = 0;
+    this.checkpointMarkedAt = null;
+    this.sustainedIndex = null;
     this.lastMoveTimestamp = Date.now();
   }
 
-  setCurrentIndex(index) {
-    const now = Date.now();
-    // 如果在上一段停留超过 8 秒，记录为有效慢速阅读锚点
+  // now 可注入，便于确认「满 8 秒才记为停下」
+  setCurrentIndex(index, now = Date.now()) {
     if (now - this.lastMoveTimestamp >= 8000) {
       this.sustainedIndex = this.currentIndex;
     }
@@ -28,26 +31,47 @@ class CheckpointManager {
     this.lastMoveTimestamp = now;
   }
 
-  // 格式化当前页面存储唯一标识 (忽略 utm 参数等干扰)
+  // 重扫时只搬移序号，不把流式刷新当成一次翻段
+  holdIndex(index) {
+    this.currentIndex = index;
+  }
+
+  // 对整段地址做哈希。截断前缀会让同一站点下的不同对话共用一条进度。
+  hashString(str) {
+    let fnv = 2166136261;
+    let djb = 5381;
+    for (let i = 0; i < str.length; i++) {
+      const code = str.charCodeAt(i);
+      fnv ^= code;
+      fnv = Math.imul(fnv, 16777619);
+      djb = Math.imul(djb, 33) ^ code;
+    }
+    const left = (fnv >>> 0).toString(16).padStart(8, '0');
+    const right = (djb >>> 0).toString(16).padStart(8, '0');
+    return left + right;
+  }
+
   getStorageKey() {
     try {
       const url = new URL(window.location.href);
-      // 清除无意义查询参数
       ['utm_source', 'utm_medium', 'utm_campaign', 'ref', 'source'].forEach(p => url.searchParams.delete(p));
-      const cleanPath = (url.origin + url.pathname + url.search).slice(0, 160);
-      return `btf_progress_${btoa(unescape(encodeURIComponent(cleanPath))).slice(0, 32)}`;
+      const cleanPath = url.origin + url.pathname + url.search;
+      const scope = this.scopeId || '';
+      return `btf_progress_${this.hashString(cleanPath + '|' + scope)}`;
     } catch (e) {
-      return `btf_progress_${window.location.pathname.slice(0, 32)}`;
+      const path = window.location && window.location.pathname ? window.location.pathname : 'page';
+      return `btf_progress_${this.hashString(path + '|' + (this.scopeId || ''))}`;
     }
   }
 
-  // 保存当前阅读进度与检查点 (记忆模式)
   saveProgress(totalCount) {
     try {
       const key = this.getStorageKey();
       const payload = {
         currentIndex: this.currentIndex,
         checkpointIndex: this.checkpointIndex,
+        checkpointMarkedAt: this.checkpointMarkedAt,
+        sustainedIndex: this.sustainedIndex,
         total: totalCount || 0,
         timestamp: Date.now(),
         url: window.location.href
@@ -56,14 +80,12 @@ class CheckpointManager {
     } catch (e) {}
   }
 
-  // 读取上次退出的阅读进度
   loadSavedProgress() {
     try {
       const key = this.getStorageKey();
       const raw = localStorage.getItem(key);
       if (!raw) return null;
       const data = JSON.parse(raw);
-      // 7 天之内的进度有效
       if (Date.now() - data.timestamp > 7 * 24 * 60 * 60 * 1000) {
         localStorage.removeItem(key);
         return null;
@@ -74,7 +96,6 @@ class CheckpointManager {
     }
   }
 
-  // 清除当前页面记忆（支持用户主动从头开始）
   clearSavedProgress() {
     try {
       const key = this.getStorageKey();
@@ -82,11 +103,10 @@ class CheckpointManager {
     } catch (e) {}
   }
 
-  // 按 C 标记检查点
-  markCheckpoint() {
+  markCheckpoint(now = Date.now()) {
     this.checkpointIndex = this.currentIndex;
-    
-    // 上报事件给 background 用于本地元认知统计
+    this.checkpointMarkedAt = now;
+
     chrome.runtime.sendMessage({
       action: 'RECORD_EVENT',
       payload: {
@@ -101,25 +121,22 @@ class CheckpointManager {
     };
   }
 
-  // 按 R 计算一键回神的目标段落
-  calculateSnapbackTarget() {
-    let targetIndex = 0;
-    let fallback = false;
-
-    if (this.checkpointIndex !== null) {
-      targetIndex = this.checkpointIndex;
-    } else if (this.sustainedIndex !== null && this.sustainedIndex < this.currentIndex) {
-      targetIndex = this.sustainedIndex;
-      fallback = true;
-    } else {
-      // 没有任何检查点时的兜底：回退 3 段
-      targetIndex = Math.max(0, this.currentIndex - 3);
-      fallback = true;
+  peekSnapbackTarget() {
+    if (this.checkpointIndex !== null && this.checkpointIndex !== undefined) {
+      return this.checkpointIndex;
     }
+    if (typeof this.sustainedIndex === 'number' && this.sustainedIndex < this.currentIndex) {
+      return this.sustainedIndex;
+    }
+    return Math.max(0, this.currentIndex - 3);
+  }
 
+  calculateSnapbackTarget() {
+    const hasCheckpoint = this.checkpointIndex !== null && this.checkpointIndex !== undefined;
+    const targetIndex = this.peekSnapbackTarget();
+    const fallback = !hasCheckpoint;
     const driftDelta = Math.max(0, this.currentIndex - targetIndex);
 
-    // 上报回神事件与飘逸段落数
     chrome.runtime.sendMessage({
       action: 'RECORD_EVENT',
       payload: {
@@ -138,6 +155,10 @@ class CheckpointManager {
 
   getCheckpoint() {
     return this.checkpointIndex;
+  }
+
+  getSustainedIndex() {
+    return this.sustainedIndex;
   }
 
   getCurrentIndex() {
