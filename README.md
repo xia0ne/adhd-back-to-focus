@@ -96,18 +96,62 @@
 
 本项目基于 **Chrome Extension Manifest V3** 纯原生开发，**零构建依赖、开箱即用**：
 
-1. **克隆仓库**：
+### 方式 A：直接下载安装包（推荐 · 免 Git）
+1. 前往 **[GitHub Releases 页面](https://github.com/xia0ne/adhd-back-to-focus/releases)**。
+2. 下载最新版本的 `adhd-back-to-focus-vX.X.X.zip` 并解压到本地任意目录。
+3. 打开浏览器（Chrome / Edge / Brave / Arc 等），在地址栏输入 `chrome://extensions/` 并回车。
+4. 开启右上角的 **“开发者模式” (Developer mode)** 开关。
+5. 点击左上角 **“加载已解压的扩展程序” (Load unpacked)**，选择刚解压出来的文件夹即可！
+
+### 方式 B：从源码安装（开发者）
+1. 克隆代码仓库：
    ```bash
    git clone git@github.com:xia0ne/adhd-back-to-focus.git
    ```
-2. **加载到 Chrome / Edge / Brave 浏览器**：
-   * 打开浏览器，在地址栏输入 `chrome://extensions/` 并回车。
-   * 打开右上角 **“开发者模式” (Developer mode)** 开关。
-   * 点击左上角 **“加载已解压的扩展程序” (Load unpacked)** 按钮。
-   * 选择本项目所在的文件夹 `adhd-back-to-focus`。
-3. **立即体验**：
-   * 打开任何长篇文章或 AI 网页（如 ChatGPT / Claude / DeepSeek）。
-   * **双击任意一段文字**（或按 `Alt + F`），开始纯净的回神之旅。
+2. 按照方式 A 的步骤 3~5，在浏览器中加载 `adhd-back-to-focus` 目录。
+
+### 立即体验
+* 打开任何长篇文章或 AI 网页（如 ChatGPT / Claude / DeepSeek）。
+* **双击任意一段文字**（或按 `Alt + F`），开启纯净的回神之旅。
+
+---
+
+## 🤝 贡献指南（Contributing）
+
+我们热烈欢迎所有针对 ADHD / 神经多样性（Neurodiversity）阅读体验的反馈、适配与功能改进！
+
+### 贡献流程
+1. **Fork** 本仓库到你的 GitHub 账号。
+2. 创建你的特性分支：
+   ```bash
+   git checkout -b feat/your-feature-name
+   ```
+3. 提交你的代码（请遵循清晰的 Commit Message 规范）：
+   ```bash
+   git commit -m 'feat: adapt new ai platform or improve spotlight'
+   ```
+4. 推送分支到你的远端仓库：
+   ```bash
+   git push origin feat/your-feature-name
+   ```
+5. 在 GitHub 上向本项目发起 **Pull Request (PR)**。
+
+### 开发建议
+* **保持克制与纯净**：尽量保持纯原生 JavaScript 与 CSS，不引入冗杂的重型第三方依赖。
+* **遵循 Apple HIG 美学**：维持超薄磨砂玻璃、自然中性色阶与微米边框设计，避免添加带有视觉压迫感的强刺激元素。
+
+---
+
+## 👥 贡献者名单（Contributors）
+
+非常感谢所有为「回神 · Back to Focus」贡献代码、提出建议与反馈想法的伙伴们！
+
+<a href="https://github.com/xia0ne/adhd-back-to-focus/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=xia0ne/adhd-back-to-focus" alt="Contributors" />
+</a>
+
+* **项目发起人 / Maintainer**: [@xia0ne](https://github.com/xia0ne)
+* 欢迎提交 PR，让你的头像出现在这里！
 
 ---
 
