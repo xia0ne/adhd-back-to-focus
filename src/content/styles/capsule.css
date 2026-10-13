@@ -54,6 +54,16 @@
   color: #F2F2F7;
 }
 
+.btf-mini-pomo {
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #FFB340;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(255, 159, 10, 0.15);
+}
+
 .btf-mini-expand {
   font-size: 12px;
   color: #8E8E93;
@@ -113,7 +123,44 @@
 .btf-header-actions {
   display: flex;
   align-items: center;
+  gap: 6px;
+}
+
+/* ADHD 专注冲刺番茄钟胶囊 */
+.btf-pomodoro-pill {
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 0.5px solid rgba(255, 255, 255, 0.18);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #E5E5EA;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btf-pomodoro-pill:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+}
+
+.btf-pomodoro-pill.btf-pomo-running {
+  background: rgba(255, 159, 10, 0.22);
+  border-color: rgba(255, 159, 10, 0.45);
+  color: #FFB340;
+  box-shadow: 0 0 10px rgba(255, 159, 10, 0.25);
+}
+
+.btf-pomodoro-pill.btf-pomo-break {
+  background: rgba(52, 199, 89, 0.22);
+  border-color: rgba(52, 199, 89, 0.45);
+  color: #34C759;
 }
 
 .btf-icon-btn {
@@ -133,6 +180,54 @@
 
 .btf-icon-btn:hover {
   background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+}
+
+/* 番茄钟冲刺达成休息横幅 */
+.btf-pomo-banner {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(52, 199, 89, 0.14);
+  border: 0.5px solid rgba(52, 199, 89, 0.35);
+  animation: btfBannerSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btf-pomo-banner.btf-pomo-visible {
+  display: flex;
+}
+
+.btf-pomo-prompt {
+  font-size: 11px;
+  font-weight: 600;
+  color: #34C759;
+}
+
+.btf-pomo-btn-group {
+  display: flex;
+  gap: 6px;
+}
+
+.btf-pomo-action-btn {
+  flex: 1;
+  padding: 5px 0;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.btf-pomo-break-btn {
+  background: #34C759;
+  color: #FFFFFF;
+}
+
+.btf-pomo-continue-btn {
+  background: rgba(255, 255, 255, 0.15);
   color: #FFFFFF;
 }
 
@@ -212,6 +307,27 @@
   padding: 6px 10px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.05);
+}
+
+.btf-status-header-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btf-restart-btn {
+  background: transparent;
+  border: none;
+  font-size: 10px;
+  color: #8E8E93;
+  cursor: pointer;
+  padding: 0 2px;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+
+.btf-restart-btn:hover {
+  color: #FF9F0A;
 }
 
 .btf-status-item {

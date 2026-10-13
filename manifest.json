@@ -44,6 +44,7 @@
         "src/content/ai-adapters.js",
         "src/content/dom-extractor.js",
         "src/content/checkpoint.js",
+        "src/content/pomodoro.js",
         "src/content/capsule.js",
         "src/content/spotlight.js",
         "src/content/content.js"

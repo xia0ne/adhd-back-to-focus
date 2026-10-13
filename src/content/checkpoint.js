@@ -1,6 +1,6 @@
 /**
  * 回神 · Back to Focus
- * 理解检查点 (C) 与一键回神 (R) 状态机
+ * 理解检查点 (C)、一键回神 (R) 与跨会话阅读记忆状态机
  */
 
 class CheckpointManager {
@@ -26,6 +26,60 @@ class CheckpointManager {
     }
     this.currentIndex = index;
     this.lastMoveTimestamp = now;
+  }
+
+  // 格式化当前页面存储唯一标识 (忽略 utm 参数等干扰)
+  getStorageKey() {
+    try {
+      const url = new URL(window.location.href);
+      // 清除无意义查询参数
+      ['utm_source', 'utm_medium', 'utm_campaign', 'ref', 'source'].forEach(p => url.searchParams.delete(p));
+      const cleanPath = (url.origin + url.pathname + url.search).slice(0, 160);
+      return `btf_progress_${btoa(unescape(encodeURIComponent(cleanPath))).slice(0, 32)}`;
+    } catch (e) {
+      return `btf_progress_${window.location.pathname.slice(0, 32)}`;
+    }
+  }
+
+  // 保存当前阅读进度与检查点 (记忆模式)
+  saveProgress(totalCount) {
+    try {
+      const key = this.getStorageKey();
+      const payload = {
+        currentIndex: this.currentIndex,
+        checkpointIndex: this.checkpointIndex,
+        total: totalCount || 0,
+        timestamp: Date.now(),
+        url: window.location.href
+      };
+      localStorage.setItem(key, JSON.stringify(payload));
+    } catch (e) {}
+  }
+
+  // 读取上次退出的阅读进度
+  loadSavedProgress() {
+    try {
+      const key = this.getStorageKey();
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      // 7 天之内的进度有效
+      if (Date.now() - data.timestamp > 7 * 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(key);
+        return null;
+      }
+      return data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // 清除当前页面记忆（支持用户主动从头开始）
+  clearSavedProgress() {
+    try {
+      const key = this.getStorageKey();
+      localStorage.removeItem(key);
+    } catch (e) {}
   }
 
   // 按 C 标记检查点

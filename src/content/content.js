@@ -1,6 +1,7 @@
 /**
  * 回神 · Back to Focus
  * Content Script 主入口与核心调度器
+ * 支持：记忆模式恢复、ADHD 专注冲刺钟、双击秒开与视口居中吸附
  */
 
 (() => {
@@ -23,11 +24,11 @@
     return false;
   }
 
-  // 启动聚焦模式 (支持指定初始段落索引)
-  function enableFocusMode(targetIndex = 0) {
+  // 启动聚焦模式 (支持记忆模式与指定初始段落)
+  function enableFocusMode(explicitIndex = null) {
     if (isEnabled) {
-      if (typeof targetIndex === 'number' && targetIndex >= 0 && targetIndex < blocks.length) {
-        updateActiveFocus(targetIndex);
+      if (typeof explicitIndex === 'number' && explicitIndex >= 0 && explicitIndex < blocks.length) {
+        updateActiveFocus(explicitIndex);
       }
       return;
     }
@@ -39,8 +40,28 @@
     }
 
     isEnabled = true;
-    currentIndex = Math.max(0, Math.min(blocks.length - 1, targetIndex));
     spotlight.init();
+
+    let initialIndex = 0;
+    let isRestored = false;
+
+    if (explicitIndex !== null && typeof explicitIndex === 'number') {
+      initialIndex = Math.max(0, Math.min(blocks.length - 1, explicitIndex));
+    } else {
+      // 记忆模式：检测当前页面是否有上次退出时的阅读记忆
+      const saved = checkpointMgr.loadSavedProgress();
+      if (saved && typeof saved.currentIndex === 'number' && saved.currentIndex < blocks.length) {
+        initialIndex = saved.currentIndex;
+        isRestored = true;
+        // 恢复历史检查点
+        if (saved.checkpointIndex !== null && saved.checkpointIndex < blocks.length) {
+          checkpointMgr.checkpointIndex = saved.checkpointIndex;
+          spotlight.markCheckpointBadge(blocks[saved.checkpointIndex].element);
+        }
+      }
+    }
+
+    currentIndex = initialIndex;
 
     // 初始化 Apple 风格可折叠悬浮控制面板
     capsule = new window.FocusCapsule({
@@ -55,32 +76,51 @@
       onClose: () => disableFocusMode(),
       onContinue: () => {
         capsule.showToast('保持专注中 ✦', 1200);
-      }
+      },
+      onRestart: () => handleRestartFromBeginning()
     });
 
-    // 聚焦首个或指定阅读单元
+    // 聚焦指定或记忆的阅读单元
     updateActiveFocus(currentIndex);
     bindPageInteractions();
+
+    if (isRestored) {
+      capsule.showToast(`↺ 已恢复上次阅读进度 (第 ${currentIndex + 1} 段)`, 2000);
+    }
   }
 
   // 关闭聚焦模式
   function disableFocusMode() {
     if (!isEnabled) return;
+    // 退出前自动固化当前阅读进度 (记忆模式)
+    checkpointMgr.saveProgress(blocks.length);
+
     isEnabled = false;
     spotlight.destroy();
     if (capsule) {
       capsule.destroy();
       capsule = null;
     }
-    checkpointMgr.reset();
   }
 
   function toggleFocusMode() {
     if (isEnabled) disableFocusMode();
-    else enableFocusMode(0);
+    else enableFocusMode();
   }
 
-  // 更新当前聚焦，并自动平滑跳转视口
+  // 从头开始重置阅读记忆
+  function handleRestartFromBeginning() {
+    checkpointMgr.clearSavedProgress();
+    checkpointMgr.checkpointIndex = null;
+    document.querySelectorAll('.btf-checkpoint-badge').forEach(b => b.remove());
+    document.querySelectorAll('.btf-has-checkpoint').forEach(el => el.classList.remove('btf-has-checkpoint'));
+    updateActiveFocus(0);
+    if (capsule) {
+      capsule.showToast('已从第 1 段从头开始 ✦', 1500);
+    }
+  }
+
+  // 更新当前聚焦，自动平滑居中跳转视口，并自动记忆进度
   function updateActiveFocus(index) {
     if (index < 0 || index >= blocks.length) return;
 
@@ -90,6 +130,9 @@
 
     // 聚光灯高亮与平滑视线居中
     spotlight.focus(activeBlock, blocks);
+
+    // 自动固化进度 (记忆模式)
+    checkpointMgr.saveProgress(blocks.length);
 
     // 同步更新悬浮框进度与预估时间
     if (capsule) {
@@ -103,6 +146,8 @@
     if (res.success) {
       const activeBlock = blocks[currentIndex];
       spotlight.markCheckpointBadge(activeBlock.element);
+      checkpointMgr.saveProgress(blocks.length);
+
       if (capsule) {
         capsule.updateProgress(currentIndex, blocks.length, res.index, activeBlock);
         capsule.showToast(`⚓ 已签收理解 (第 ${currentIndex + 1} 段)`, 1500);
@@ -146,7 +191,7 @@
     if (!isEnabled) {
       if ((e.altKey || e.metaKey) && (e.key === 'f' || e.key === 'F')) {
         e.preventDefault();
-        enableFocusMode(0);
+        enableFocusMode();
       }
       return;
     }
@@ -230,13 +275,15 @@
     const targetEl = e.target.closest('p, li, pre, blockquote, h1, h2, h3, h4');
     if (!targetEl) return;
 
+    // 清除双击带来的文本选中蓝底
+    if (window.getSelection) {
+      window.getSelection().removeAllRanges();
+    }
+
     if (!isEnabled) {
-      // 开启聚焦并定位到被双击的段落
-      enableFocusMode(0);
+      blocks = extractor.scanAndIndex();
       const matchedIdx = blocks.findIndex(b => b.element === targetEl || b.element.contains(targetEl));
-      if (matchedIdx !== -1) {
-        updateActiveFocus(matchedIdx);
-      }
+      enableFocusMode(matchedIdx !== -1 ? matchedIdx : null);
     } else {
       const matchedIdx = blocks.findIndex(b => b.element === targetEl || b.element.contains(targetEl));
       if (matchedIdx !== -1 && matchedIdx !== currentIndex) {
