@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "回神 · Back to Focus",
+  "version": "1.0.0",
+  "description": "专为 ADHD 与深度阅读者打造的段落聚焦、理解检查与一键回神工具（深度适配主流 AI 页面与长文）。",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "回神 · Back to Focus"
+  },
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.js"
+  },
+  "commands": {
+    "toggle-focus-mode": {
+      "suggested_key": {
+        "default": "Alt+F",
+        "mac": "Alt+F"
+      },
+      "description": "开启 / 关闭回神聚焦模式"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "css": [
+        "src/content/styles/spotlight.css",
+        "src/content/styles/capsule.css"
+      ],
+      "js": [
+        "src/content/ai-adapters.js",
+        "src/content/dom-extractor.js",
+        "src/content/checkpoint.js",
+        "src/content/tts.js",
+        "src/content/capsule.js",
+        "src/content/spotlight.js",
+        "src/content/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

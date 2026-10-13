@@ -1,0 +1,112 @@
+/**
+ * 回神 · Back to Focus
+ * Apple 风格聚光灯与段落微交互样式
+ */
+
+/* 开启聚焦模式时，页面全局非活跃元素减弱对比度 */
+body.btf-focus-enabled [data-btf-index] {
+  opacity: 0.22;
+  filter: blur(0.4px);
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 活跃当前聚焦段落 - Apple 纯正高对比度与纯净左饰线 */
+body.btf-focus-enabled [data-btf-index].btf-active-block {
+  opacity: 1 !important;
+  filter: blur(0px) !important;
+  position: relative;
+  z-index: 10;
+  border-left: 3px solid #007AFF !important;
+  padding-left: 14px !important;
+  border-radius: 2px;
+  background-color: rgba(0, 122, 255, 0.03);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  transform: scale(1.008);
+}
+
+/* 邻近前后各一段 - 保留上下文，防止视狭感 */
+body.btf-focus-enabled [data-btf-index].btf-adjacent-block {
+  opacity: 0.55 !important;
+  filter: blur(0px) !important;
+}
+
+/* 理解检查点标记 (C) */
+.btf-checkpoint-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  margin-right: 8px;
+  color: #FF9F0A;
+  user-select: none;
+  vertical-align: middle;
+}
+
+[data-btf-index].btf-has-checkpoint {
+  border-left: 3px solid #FF9F0A !important;
+}
+
+/* 按 C 标记时的轻微琥珀色光晕脉冲 */
+@keyframes btfAmberGlow {
+  0% {
+    background-color: rgba(255, 159, 10, 0.25);
+  }
+  100% {
+    background-color: rgba(255, 159, 10, 0.02);
+  }
+}
+
+.btf-pulse-amber {
+  animation: btfAmberGlow 0.8s ease-out;
+}
+
+/* 一键回神 (R) 目标段落动效 */
+@keyframes btfSnapbackArrival {
+  0% {
+    transform: scale(0.98);
+    background-color: rgba(0, 122, 255, 0.2);
+  }
+  50% {
+    transform: scale(1.02);
+    background-color: rgba(0, 122, 255, 0.1);
+  }
+  100% {
+    transform: scale(1.008);
+    background-color: rgba(0, 122, 255, 0.03);
+  }
+}
+
+.btf-snapback-target {
+  animation: btfSnapbackArrival 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* AI 思考过程 (Thinking Block) 极简折叠胶囊 */
+.btf-thinking-block {
+  margin: 10px 0;
+}
+
+.btf-thinking-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(142, 142, 147, 0.12);
+  border: 0.5px solid rgba(142, 142, 147, 0.24);
+  border-radius: 14px;
+  font-size: 12px;
+  color: #8E8E93;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease;
+}
+
+.btf-thinking-pill:hover {
+  background: rgba(142, 142, 147, 0.2);
+  color: #1C1C1E;
+}
+
+.btf-thinking-content.btf-collapsed {
+  display: none !important;
+}

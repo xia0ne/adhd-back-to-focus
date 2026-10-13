@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>回神 · Back to Focus</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-logo">⚓</span>
+        <div>
+          <h1 class="brand-title">回神</h1>
+          <p class="brand-subtitle">Back to Focus</p>
+        </div>
+      </div>
+      <label class="apple-switch" title="开启/关闭聚焦模式">
+        <input type="checkbox" id="focusToggle">
+        <span class="slider"></span>
+      </label>
+    </header>
+
+    <!-- Stats Inset Group -->
+    <div class="inset-group">
+      <div class="group-header">今日元认知统计</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="todaySnapbacks">0</div>
+          <div class="stat-label">主动回神</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value text-amber" id="totalCheckpoints">0</div>
+          <div class="stat-label">理解检查点</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value text-blue" id="driftSaved">0</div>
+          <div class="stat-label">挽救飘逸段</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shortcuts Inset Group -->
+    <div class="inset-group">
+      <div class="group-header">极简快捷键</div>
+      <div class="list-container">
+        <div class="list-item">
+          <span>逐段吸附切换</span>
+          <div class="kbd-group"><kbd>J</kbd><kbd>K</kbd> 或 <kbd>↓</kbd><kbd>↑</kbd></div>
+        </div>
+        <div class="list-item">
+          <span>理解检查点 (签收)</span>
+          <div class="kbd-group"><kbd>C</kbd></div>
+        </div>
+        <div class="list-item">
+          <span>一键回神 (跳回检查点)</span>
+          <div class="kbd-group"><kbd>R</kbd></div>
+        </div>
+        <div class="list-item">
+          <span>双感官语音朗读</span>
+          <div class="kbd-group"><kbd>S</kbd></div>
+        </div>
+        <div class="list-item">
+          <span>微调朗读语速</span>
+          <div class="kbd-group"><kbd>[</kbd><kbd>]</kbd></div>
+        </div>
+        <div class="list-item">
+          <span>退出聚焦模式</span>
+          <div class="kbd-group"><kbd>Esc</kbd></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer tip -->
+    <footer class="app-footer">
+      <span>已适配 ChatGPT, Claude, Gemini, DeepSeek 及各大长文</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

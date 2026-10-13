@@ -1,0 +1,220 @@
+/**
+ * 回神 · Back to Focus
+ * Apple HIG 风格弹出面板样式
+ */
+
+:root {
+  --bg-primary: #F2F2F7;
+  --card-bg: #FFFFFF;
+  --text-primary: #000000;
+  --text-secondary: #8E8E93;
+  --border-color: rgba(60, 60, 67, 0.12);
+  --accent-blue: #007AFF;
+  --accent-amber: #FF9F0A;
+  --kbd-bg: #E5E5EA;
+  --kbd-text: #1C1C1E;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1C1C1E;
+    --card-bg: #2C2C2E;
+    --text-primary: #FFFFFF;
+    --text-secondary: #8E8E93;
+    --border-color: rgba(255, 255, 255, 0.12);
+    --accent-blue: #0A84FF;
+    --accent-amber: #FF9F0A;
+    --kbd-bg: #3A3A3C;
+    --kbd-text: #F2F2F7;
+  }
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 320px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding: 16px;
+  user-select: none;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo {
+  font-size: 20px;
+  color: var(--accent-amber);
+}
+
+.brand-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+
+.brand-subtitle {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Apple Switch */
+.apple-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 26px;
+  cursor: pointer;
+}
+
+.apple-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(120, 120, 128, 0.28);
+  border-radius: 26px;
+  transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #FFFFFF;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+input:checked + .slider {
+  background-color: #34C759;
+}
+
+input:checked + .slider:before {
+  transform: translateX(18px);
+}
+
+/* Inset Group (iOS Settings Style) */
+.inset-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.group-header {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  padding-left: 8px;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background-color: var(--card-bg);
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: 0.5px solid var(--border-color);
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.text-amber { color: var(--accent-amber); }
+.text-blue { color: var(--accent-blue); }
+
+/* List Container */
+.list-container {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  border: 0.5px solid var(--border-color);
+  overflow: hidden;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  font-size: 12px;
+  border-bottom: 0.5px solid var(--border-color);
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+.kbd-group {
+  display: flex;
+  gap: 4px;
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 5px;
+  background-color: var(--kbd-bg);
+  color: var(--kbd-text);
+  border: 0.5px solid var(--border-color);
+}
+
+/* Footer */
+.app-footer {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-secondary);
+  padding-top: 2px;
+}
