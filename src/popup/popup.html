@@ -49,6 +49,22 @@
         </div>
       </section>
 
+      <!-- 近 7 日专注趋势 (Apple 屏幕使用时间风格) -->
+      <section class="inset-group">
+        <div class="group-header-with-action">
+          <span class="group-header-inline">近 7 日专注趋势</span>
+          <span class="chart-summary-inline" id="chartAvgText">日均 0 段</span>
+        </div>
+        <div class="chart-card">
+          <div class="bar-chart-container" id="barChartContainer">
+            <!-- 动态生成 7 根条形柱 -->
+          </div>
+          <div class="chart-footer-caption" id="chartFooterCaption">
+            近 7 日共精读 0 段 · 主动回神 0 次
+          </div>
+        </div>
+      </section>
+
       <!-- 累积元认知数据 -->
       <section class="inset-group">
         <div class="group-header">累积元认知数据</div>
@@ -99,6 +115,18 @@
               <input type="checkbox" id="settingEnableDblClick">
               <span class="slider"></span>
             </label>
+          </div>
+
+          <div class="setting-item column">
+            <div class="setting-info">
+              <span class="setting-title">聚光灯聚焦强度</span>
+              <span class="setting-desc">控制非当前阅读段落的淡化暗度</span>
+            </div>
+            <div class="dim-picker" id="dimPicker" role="radiogroup">
+              <button type="button" class="dim-chip" data-dim="soft">柔和 40%</button>
+              <button type="button" class="dim-chip active" data-dim="standard">标准 22%</button>
+              <button type="button" class="dim-chip" data-dim="deep">沉浸 8%</button>
+            </div>
           </div>
 
           <div class="setting-item">

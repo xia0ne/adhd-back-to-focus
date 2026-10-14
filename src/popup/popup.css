@@ -206,6 +206,28 @@ input:checked + .slider:before {
   padding-left: 8px;
 }
 
+.group-header-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+.group-header-inline {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+.chart-summary-inline {
+  font-size: 11px;
+  color: var(--accent-blue);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Stats Grid 3 */
 .stats-grid-3 {
   display: grid;
@@ -233,6 +255,83 @@ input:checked + .slider:before {
 .stat-label {
   font-size: 10px;
   color: var(--text-secondary);
+}
+
+/* 7-Day Chart Card (Apple Screen Time Style) */
+.chart-card {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  border: 0.5px solid var(--border-color);
+  padding: 12px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bar-chart-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 64px;
+  padding: 0 2px;
+}
+
+.chart-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 32px;
+  height: 100%;
+  cursor: pointer;
+  position: relative;
+}
+
+.bar-track {
+  width: 10px;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  background: var(--segment-bg);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  width: 100%;
+  min-height: 4px;
+  border-radius: 6px;
+  background: rgba(0, 122, 255, 0.45);
+  transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
+}
+
+.chart-col.is-today .bar-fill {
+  background: var(--accent-blue);
+  box-shadow: 0 0 5px rgba(0, 122, 255, 0.35);
+}
+
+.chart-col:hover .bar-fill {
+  background: var(--accent-amber);
+}
+
+.bar-day-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+.chart-col.is-today .bar-day-label {
+  color: var(--accent-blue);
+  font-weight: 700;
+}
+
+.chart-footer-caption {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-align: center;
+  border-top: 0.5px solid var(--border-color);
+  padding-top: 6px;
+  line-height: 1.3;
 }
 
 /* Stats 2x2 rows */
@@ -337,6 +436,12 @@ input:checked + .slider:before {
   border-bottom: none;
 }
 
+.setting-item.column {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
 .setting-info {
   display: flex;
   flex-direction: column;
@@ -353,6 +458,37 @@ input:checked + .slider:before {
   font-size: 10px;
   color: var(--text-secondary);
   line-height: 1.25;
+}
+
+/* Dim Picker (Segmented Radiogroup) */
+.dim-picker {
+  display: flex;
+  gap: 6px;
+}
+
+.dim-chip {
+  flex: 1;
+  padding: 5px 0;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 0.5px solid var(--border-color);
+  background: var(--segment-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dim-chip:hover {
+  color: var(--text-primary);
+}
+
+.dim-chip.active {
+  background: var(--card-bg);
+  color: var(--accent-blue);
+  font-weight: 600;
+  border-color: var(--accent-blue);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .list-item {

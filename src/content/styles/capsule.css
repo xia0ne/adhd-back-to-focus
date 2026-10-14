@@ -463,3 +463,38 @@
 .btf-mini-switch:checked:before {
   transform: translateX(14px);
 }
+
+.btf-settings-item-col {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.btf-dim-capsule-picker {
+  display: flex;
+  gap: 4px;
+}
+
+.btf-dim-chip {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #8E8E93;
+  font-size: 10px;
+  padding: 4px 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btf-dim-chip:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+}
+
+.btf-dim-chip.active {
+  background: #007AFF;
+  border-color: #007AFF;
+  color: #FFFFFF;
+  font-weight: 600;
+}

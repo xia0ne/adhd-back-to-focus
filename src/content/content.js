@@ -18,7 +18,8 @@
     enableDblClick: false,
     autoScroll: true,
     keepDriftMarks: true,
-    autoFoldThinking: true
+    autoFoldThinking: true,
+    dimLevel: 'standard'
   };
 
   function applySettings(newSettings) {
@@ -26,6 +27,9 @@
     settings = { ...settings, ...newSettings };
     if (spotlight) {
       spotlight.keepDriftMarks = settings.keepDriftMarks !== false;
+      if (settings.dimLevel) {
+        spotlight.setDimLevel(settings.dimLevel);
+      }
     }
   }
 
@@ -123,6 +127,7 @@
 
     isEnabled = true;
     spotlight.keepDriftMarks = settings.keepDriftMarks !== false;
+    spotlight.dimLevel = settings.dimLevel || 'standard';
     spotlight.init();
     rememberScope(extractor.currentContainer);
 

@@ -151,6 +151,17 @@ class FocusCapsule {
               </div>
               <input type="checkbox" id="btf-toggle-drift" class="btf-mini-switch">
             </label>
+            <div class="btf-settings-item btf-settings-item-col">
+              <div class="btf-settings-label-group">
+                <span class="btf-settings-label">聚焦淡化强度</span>
+                <span class="btf-settings-hint">非聚焦区域变暗程度</span>
+              </div>
+              <div class="btf-dim-capsule-picker" id="btf-capsule-dim-picker">
+                <button type="button" class="btf-dim-chip" data-dim="soft">柔和 40%</button>
+                <button type="button" class="btf-dim-chip" data-dim="standard">标准 22%</button>
+                <button type="button" class="btf-dim-chip" data-dim="deep">沉浸 8%</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -227,6 +238,10 @@ class FocusCapsule {
         toggleDblClick.checked = !!s.enableDblClick;
         toggleAutoScroll.checked = s.autoScroll !== false;
         toggleDrift.checked = s.keepDriftMarks !== false;
+        const currentDim = s.dimLevel || 'standard';
+        settingsPanel.querySelectorAll('.btf-dim-chip').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.dim === currentDim);
+        });
         settingsPanel.style.display = 'flex';
       } else {
         settingsPanel.style.display = 'none';
@@ -251,6 +266,20 @@ class FocusCapsule {
     toggleDblClick.addEventListener('change', onSettingChange);
     toggleAutoScroll.addEventListener('change', onSettingChange);
     toggleDrift.addEventListener('change', onSettingChange);
+
+    settingsPanel.querySelectorAll('.btf-dim-chip').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const dim = btn.dataset.dim;
+        settingsPanel.querySelectorAll('.btf-dim-chip').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const data = await chrome.storage.local.get(['settings']);
+        const s = data.settings || {};
+        s.dimLevel = dim;
+        await chrome.storage.local.set({ settings: s });
+        this.showToast(`聚焦强度: ${btn.textContent.trim()}`, 1200);
+      });
+    });
 
     // 番茄钟只挂在折叠胶囊的计时上：单击启停，双击换挡
     const miniPomo = root.querySelector('#btf-mini-pomo');

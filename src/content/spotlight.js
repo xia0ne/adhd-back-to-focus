@@ -29,10 +29,18 @@ class SpotlightRenderer {
     this.adjacentElements = [];
     this.driftElements = new Set();
     this.keepDriftMarks = true;
+    this.dimLevel = 'standard';
+  }
+
+  setDimLevel(dimLevel = 'standard') {
+    this.dimLevel = dimLevel;
+    document.body.classList.remove('btf-dim-soft', 'btf-dim-standard', 'btf-dim-deep');
+    document.body.classList.add(`btf-dim-${dimLevel}`);
   }
 
   init() {
     document.body.classList.add('btf-focus-enabled');
+    this.setDimLevel(this.dimLevel);
     this.syncTheme();
   }
 
@@ -182,7 +190,7 @@ class SpotlightRenderer {
     this.clearAllDrift();
     document.querySelectorAll('.btf-checkpoint-badge').forEach(b => b.remove());
     document.querySelectorAll('.btf-has-checkpoint').forEach(el => el.classList.remove('btf-has-checkpoint'));
-    document.body.classList.remove('btf-focus-enabled', 'btf-dark');
+    document.body.classList.remove('btf-focus-enabled', 'btf-dark', 'btf-dim-soft', 'btf-dim-standard', 'btf-dim-deep');
   }
 }
 
