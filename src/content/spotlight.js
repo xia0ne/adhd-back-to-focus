@@ -28,6 +28,7 @@ class SpotlightRenderer {
     this.currentElement = null;
     this.adjacentElements = [];
     this.driftElements = new Set();
+    this.keepDriftMarks = true;
   }
 
   init() {
@@ -162,7 +163,9 @@ class SpotlightRenderer {
         toElement.classList.remove('btf-snapback-target');
       }, 1200);
     }
-    this.markDrift(skippedElements);
+    if (this.keepDriftMarks !== false) {
+      this.markDrift(skippedElements);
+    }
   }
 
   clearFocusStyles() {

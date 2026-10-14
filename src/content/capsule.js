@@ -64,6 +64,7 @@ class FocusCapsule {
           </div>
           
           <div class="btf-header-actions">
+            <button class="btf-icon-btn" id="btf-btn-settings" title="偏好设置">⚙</button>
             <button class="btf-icon-btn" id="btf-btn-minimize" title="折叠为小胶囊">─</button>
             <button class="btf-icon-btn" id="btf-btn-close" title="退出聚焦模式">✕</button>
           </div>
@@ -120,6 +121,37 @@ class FocusCapsule {
             <span class="btf-btn-text" id="btf-snapback-text">一键回神</span>
             <kbd class="btf-kbd-hint">R</kbd>
           </button>
+        </div>
+
+        <!-- 卡片快捷偏好设置浮层 -->
+        <div class="btf-card-settings" id="btf-card-settings" style="display: none;">
+          <div class="btf-settings-header">
+            <span class="btf-settings-title">偏好设置</span>
+            <button class="btf-icon-btn" id="btf-btn-close-settings" title="关闭设置">✕</button>
+          </div>
+          <div class="btf-settings-list">
+            <label class="btf-settings-item">
+              <div class="btf-settings-label-group">
+                <span class="btf-settings-label">双击段落开启聚焦</span>
+                <span class="btf-settings-hint">关闭可划词复制选词</span>
+              </div>
+              <input type="checkbox" id="btf-toggle-dblclick" class="btf-mini-switch">
+            </label>
+            <label class="btf-settings-item">
+              <div class="btf-settings-label-group">
+                <span class="btf-settings-label">视线平滑吸附居中</span>
+                <span class="btf-settings-hint">换段平滑滚动至视线舒适区</span>
+              </div>
+              <input type="checkbox" id="btf-toggle-autoscroll" class="btf-mini-switch">
+            </label>
+            <label class="btf-settings-item">
+              <div class="btf-settings-label-group">
+                <span class="btf-settings-label">保留思维飘逸痕迹</span>
+                <span class="btf-settings-hint">回神时以琥珀线提示漏读段</span>
+              </div>
+              <input type="checkbox" id="btf-toggle-drift" class="btf-mini-switch">
+            </label>
+          </div>
         </div>
 
         <!-- 临时微反馈 Toast -->
@@ -180,6 +212,46 @@ class FocusCapsule {
       if (this.onRestart) this.onRestart();
     });
 
+    // 快捷偏好设置浮层控制
+    const settingsPanel = root.querySelector('#btf-card-settings');
+    const toggleDblClick = root.querySelector('#btf-toggle-dblclick');
+    const toggleAutoScroll = root.querySelector('#btf-toggle-autoscroll');
+    const toggleDrift = root.querySelector('#btf-toggle-drift');
+
+    root.querySelector('#btf-btn-settings').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const isVisible = settingsPanel.style.display !== 'none';
+      if (!isVisible) {
+        const data = await chrome.storage.local.get(['settings']);
+        const s = data.settings || {};
+        toggleDblClick.checked = !!s.enableDblClick;
+        toggleAutoScroll.checked = s.autoScroll !== false;
+        toggleDrift.checked = s.keepDriftMarks !== false;
+        settingsPanel.style.display = 'flex';
+      } else {
+        settingsPanel.style.display = 'none';
+      }
+    });
+
+    root.querySelector('#btf-btn-close-settings').addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsPanel.style.display = 'none';
+    });
+
+    const onSettingChange = async () => {
+      const data = await chrome.storage.local.get(['settings']);
+      const s = data.settings || {};
+      s.enableDblClick = toggleDblClick.checked;
+      s.autoScroll = toggleAutoScroll.checked;
+      s.keepDriftMarks = toggleDrift.checked;
+      await chrome.storage.local.set({ settings: s });
+      this.showToast('偏好设置已更新', 1200);
+    };
+
+    toggleDblClick.addEventListener('change', onSettingChange);
+    toggleAutoScroll.addEventListener('change', onSettingChange);
+    toggleDrift.addEventListener('change', onSettingChange);
+
     // 番茄钟只挂在折叠胶囊的计时上：单击启停，双击换挡
     const miniPomo = root.querySelector('#btf-mini-pomo');
     let clickTimeout = null;
@@ -234,7 +306,14 @@ class FocusCapsule {
   handlePomodoroFocusComplete() {
     this.awaitingBreak = true;
     this.updatePomodoroUI({ formatted: '00:00', state: 'IDLE' });
-    this.showToast('冲刺达成。点胶囊上的计时，休息 3 分钟', 2200);
+    chrome.runtime.sendMessage({
+      action: 'RECORD_EVENT',
+      payload: {
+        type: 'SPRINT_COMPLETE',
+        minutes: this.pomodoro.focusMinutes
+      }
+    }).catch(() => {});
+    this.showToast('冲刺达成！已计入统计。点胶囊上的计时休息 3 分钟', 2200);
   }
 
   handlePomodoroBreakComplete() {

@@ -4,29 +4,35 @@
  */
 
 const DEFAULT_SETTINGS = {
-  pingIntervalMinutes: 2,
-  dimOpacity: 0.2,
-  autoFoldThinking: true,
-  autoScroll: true
+  enableDblClick: false, // 核心设定：默认关闭双击段落聚焦，保证日常双击划词复制完全不受干扰
+  autoScroll: true,      // 切换聚焦段落时平滑吸附居中
+  keepDriftMarks: true,  // 回神时保留思维飘逸跳过段落的标记
+  autoFoldThinking: true // 自动折叠 AI 思考过程 (Claude/DeepSeek 等)
 };
 
 const DEFAULT_STATS = {
-  totalCheckpoints: 0,
-  totalSnapbacks: 0,
-  totalDriftParagraphs: 0,
   todaySnapbacks: 0,
+  todayCheckpoints: 0,
+  todayParagraphsRead: 0,
+  totalSnapbacks: 0,
+  totalCheckpoints: 0,
+  totalDriftParagraphs: 0,
+  totalParagraphsRead: 0,
+  completedSprints: 0,
+  totalFocusMinutes: 0,
   lastActiveDate: new Date().toISOString().slice(0, 10)
 };
 
-// 初始化默认配置
+// 初始化或合并默认配置与统计
 chrome.runtime.onInstalled.addListener(async () => {
   const data = await chrome.storage.local.get(['settings', 'stats']);
-  if (!data.settings) {
-    await chrome.storage.local.set({ settings: DEFAULT_SETTINGS });
+  const mergedSettings = { ...DEFAULT_SETTINGS, ...(data.settings || {}) };
+  // 若之前未设定过 enableDblClick，确保默认关闭以解除划词复制冲突
+  if (data.settings && data.settings.enableDblClick === undefined) {
+    mergedSettings.enableDblClick = false;
   }
-  if (!data.stats) {
-    await chrome.storage.local.set({ stats: DEFAULT_STATS });
-  }
+  const mergedStats = { ...DEFAULT_STATS, ...(data.stats || {}) };
+  await chrome.storage.local.set({ settings: mergedSettings, stats: mergedStats });
 });
 
 // 处理全局快捷键命令
@@ -47,27 +53,47 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     handleRecordEvent(message.payload);
     sendResponse({ status: 'ok' });
     return true;
+  } else if (message.action === 'RESET_STATS') {
+    const freshStats = {
+      ...DEFAULT_STATS,
+      lastActiveDate: new Date().toISOString().slice(0, 10)
+    };
+    chrome.storage.local.set({ stats: freshStats }).then(() => {
+      sendResponse({ status: 'ok', stats: freshStats });
+    });
+    return true;
   }
 });
 
-async function handleRecordEvent({ type, value }) {
+async function handleRecordEvent({ type, value, minutes }) {
   const data = await chrome.storage.local.get(['stats']);
-  const stats = data.stats || { ...DEFAULT_STATS };
+  const stats = { ...DEFAULT_STATS, ...(data.stats || {}) };
   const today = new Date().toISOString().slice(0, 10);
 
   // 跨天重置当日数据
   if (stats.lastActiveDate !== today) {
     stats.todaySnapbacks = 0;
+    stats.todayCheckpoints = 0;
+    stats.todayParagraphsRead = 0;
     stats.lastActiveDate = today;
   }
 
   if (type === 'CHECKPOINT') {
     stats.totalCheckpoints = (stats.totalCheckpoints || 0) + 1;
+    stats.todayCheckpoints = (stats.todayCheckpoints || 0) + 1;
   } else if (type === 'SNAPBACK') {
     stats.totalSnapbacks = (stats.totalSnapbacks || 0) + 1;
     stats.todaySnapbacks = (stats.todaySnapbacks || 0) + 1;
     if (typeof value === 'number') {
       stats.totalDriftParagraphs = (stats.totalDriftParagraphs || 0) + value;
+    }
+  } else if (type === 'PARAGRAPH_READ') {
+    stats.todayParagraphsRead = (stats.todayParagraphsRead || 0) + 1;
+    stats.totalParagraphsRead = (stats.totalParagraphsRead || 0) + 1;
+  } else if (type === 'SPRINT_COMPLETE') {
+    stats.completedSprints = (stats.completedSprints || 0) + 1;
+    if (typeof minutes === 'number' && minutes > 0) {
+      stats.totalFocusMinutes = (stats.totalFocusMinutes || 0) + minutes;
     }
   }
 

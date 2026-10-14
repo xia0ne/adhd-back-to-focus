@@ -11,8 +11,10 @@
   --border-color: rgba(60, 60, 67, 0.12);
   --accent-blue: #007AFF;
   --accent-amber: #FF9F0A;
+  --accent-green: #34C759;
   --kbd-bg: #E5E5EA;
   --kbd-text: #1C1C1E;
+  --segment-bg: rgba(118, 118, 128, 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,8 +26,10 @@
     --border-color: rgba(255, 255, 255, 0.12);
     --accent-blue: #0A84FF;
     --accent-amber: #FF9F0A;
+    --accent-green: #32D74B;
     --kbd-bg: #3A3A3C;
     --kbd-text: #F2F2F7;
+    --segment-bg: rgba(118, 118, 128, 0.24);
   }
 }
 
@@ -41,14 +45,14 @@ body {
   color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
-  padding: 16px;
+  padding: 14px;
   user-select: none;
 }
 
 .app-container {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 /* Header */
@@ -88,6 +92,7 @@ body {
   width: 44px;
   height: 26px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .apple-switch input {
@@ -125,6 +130,66 @@ input:checked + .slider:before {
   transform: translateX(18px);
 }
 
+/* Mini Switch for settings list */
+.apple-switch.mini {
+  width: 36px;
+  height: 20px;
+}
+
+.apple-switch.mini .slider {
+  border-radius: 20px;
+}
+
+.apple-switch.mini .slider:before {
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+}
+
+.apple-switch.mini input:checked + .slider:before {
+  transform: translateX(16px);
+}
+
+/* Apple Segmented Control */
+.segmented-control {
+  display: flex;
+  padding: 2px;
+  border-radius: 8px;
+  background-color: var(--segment-bg);
+}
+
+.segment-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 5px 0;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.segment-btn.active {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Tab Panes */
+.tab-pane {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tab-pane.active {
+  display: flex;
+}
+
 /* Inset Group (iOS Settings Style) */
 .inset-group {
   display: flex;
@@ -141,8 +206,8 @@ input:checked + .slider:before {
   padding-left: 8px;
 }
 
-/* Stats Grid */
-.stats-grid {
+/* Stats Grid 3 */
+.stats-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
@@ -170,10 +235,88 @@ input:checked + .slider:before {
   color: var(--text-secondary);
 }
 
+/* Stats 2x2 rows */
+.stats-grid-2x2 {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  border: 0.5px solid var(--border-color);
+  overflow: hidden;
+}
+
+.stat-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-bottom: 0.5px solid var(--border-color);
+}
+
+.stat-card-row:last-child {
+  border-bottom: none;
+}
+
+.row-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.row-value {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
 .text-amber { color: var(--accent-amber); }
 .text-blue { color: var(--accent-blue); }
+.text-green { color: var(--accent-green); }
 
-/* List Container */
+/* Insight Card */
+.insight-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(0, 122, 255, 0.06);
+  border: 0.5px solid rgba(0, 122, 255, 0.16);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.insight-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.insight-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.stats-footer-action {
+  text-align: center;
+  padding-top: 2px;
+}
+
+.text-btn-subtle {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: all 0.15s ease;
+}
+
+.text-btn-subtle:hover {
+  color: #FF3B30;
+  text-decoration-color: #FF3B30;
+}
+
+/* List Container & Setting Items */
 .list-container {
   background-color: var(--card-bg);
   border-radius: 12px;
@@ -181,11 +324,42 @@ input:checked + .slider:before {
   overflow: hidden;
 }
 
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border-bottom: 0.5px solid var(--border-color);
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.setting-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.setting-desc {
+  font-size: 10px;
+  color: var(--text-secondary);
+  line-height: 1.25;
+}
+
 .list-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 9px 12px;
+  padding: 8px 12px;
   font-size: 12px;
   border-bottom: 0.5px solid var(--border-color);
 }

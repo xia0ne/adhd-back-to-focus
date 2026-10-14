@@ -14,6 +14,33 @@
   let checkpointMgr = new window.CheckpointManager();
   let capsule = null;
 
+  let settings = {
+    enableDblClick: false,
+    autoScroll: true,
+    keepDriftMarks: true,
+    autoFoldThinking: true
+  };
+
+  function applySettings(newSettings) {
+    if (!newSettings) return;
+    settings = { ...settings, ...newSettings };
+    if (spotlight) {
+      spotlight.keepDriftMarks = settings.keepDriftMarks !== false;
+    }
+  }
+
+  chrome.storage.local.get(['settings'], (data) => {
+    if (data && data.settings) {
+      applySettings(data.settings);
+    }
+  });
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.settings && changes.settings.newValue) {
+      applySettings(changes.settings.newValue);
+    }
+  });
+
   let pageClickBound = false;
   let contentObserver = null;
   let rescanTimer = null;
@@ -95,6 +122,7 @@
     }
 
     isEnabled = true;
+    spotlight.keepDriftMarks = settings.keepDriftMarks !== false;
     spotlight.init();
     rememberScope(extractor.currentContainer);
 
@@ -142,7 +170,9 @@
 
   function switchReadingContainer(container, hintEl) {
     if (!container) return;
-    if (window.AIAdapters) window.AIAdapters.foldThinkingBlocks(container);
+    if (settings.autoFoldThinking !== false && window.AIAdapters) {
+      window.AIAdapters.foldThinkingBlocks(container);
+    }
     const elements = extractor.collectElements(container);
     if (!elements.length) {
       if (capsule) capsule.showToast('这段没有足够的阅读文本', 1500);
@@ -214,13 +244,21 @@
   function updateActiveFocus(index) {
     if (index < 0 || index >= blocks.length) return;
 
+    const isNewParagraph = currentIndex !== index;
     currentIndex = index;
     checkpointMgr.setCurrentIndex(index);
     const activeBlock = blocks[index];
 
-    spotlight.focus(activeBlock, blocks);
+    spotlight.focus(activeBlock, blocks, { scroll: settings.autoScroll !== false });
     checkpointMgr.saveProgress(blocks.length);
     syncCapsule(activeBlock);
+
+    if (isNewParagraph) {
+      chrome.runtime.sendMessage({
+        action: 'RECORD_EVENT',
+        payload: { type: 'PARAGRAPH_READ' }
+      }).catch(() => {});
+    }
   }
 
   function handleMarkCheckpoint() {
@@ -294,7 +332,9 @@
 
     rescanSuppressDepth += 1;
     try {
-      if (window.AIAdapters) window.AIAdapters.foldThinkingBlocks(container);
+      if (settings.autoFoldThinking !== false && window.AIAdapters) {
+        window.AIAdapters.foldThinkingBlocks(container);
+      }
       const elements = extractor.collectElements(container);
       if (!elements.length) return;
 
@@ -438,23 +478,27 @@
   }
 
   document.addEventListener('dblclick', (e) => {
+    // 若未开启双击监听（默认关闭），完全不干预浏览器原生双击划词与选词复制行为
+    if (!settings.enableDblClick) return;
     if (isUserInputActive()) return;
     if (e.target.closest('#btf-widget-root, #btf-capsule-root, button, input, a')) return;
 
     const targetEl = e.target.closest('tr, p, li, pre, blockquote, h1, h2, h3, h4');
     if (!targetEl) return;
 
-    if (window.getSelection) {
-      window.getSelection().removeAllRanges();
-    }
-
     const container = extractor.findReadingContainer(targetEl);
     if (!isEnabled) {
+      if (window.getSelection) {
+        window.getSelection().removeAllRanges();
+      }
       enableFocusMode(null, container, targetEl);
       return;
     }
 
     if (container && container !== extractor.currentContainer) {
+      if (window.getSelection) {
+        window.getSelection().removeAllRanges();
+      }
       switchReadingContainer(container, targetEl);
       return;
     }
@@ -465,6 +509,9 @@
       matchedIdx = indexOfElement(targetEl);
     }
     if (matchedIdx !== -1 && matchedIdx !== currentIndex) {
+      if (window.getSelection) {
+        window.getSelection().removeAllRanges();
+      }
       updateActiveFocus(matchedIdx);
     }
   });

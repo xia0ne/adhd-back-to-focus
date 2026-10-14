@@ -16,57 +16,153 @@
           <p class="brand-subtitle">Back to Focus</p>
         </div>
       </div>
-      <label class="apple-switch" title="开启/关闭聚焦模式">
+      <label class="apple-switch" title="开启/关闭聚焦模式 (Alt+F)">
         <input type="checkbox" id="focusToggle">
         <span class="slider"></span>
       </label>
     </header>
 
-    <!-- Stats Inset Group -->
-    <div class="inset-group">
-      <div class="group-header">今日元认知统计</div>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value" id="todaySnapbacks">0</div>
-          <div class="stat-label">主动回神</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value text-amber" id="totalCheckpoints">0</div>
-          <div class="stat-label">理解检查点</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value text-blue" id="driftSaved">0</div>
-          <div class="stat-label">挽救飘逸段</div>
-        </div>
-      </div>
+    <!-- Apple Segmented Control -->
+    <div class="segmented-control" role="tablist">
+      <button class="segment-btn active" id="tabBtnStats" role="tab" aria-selected="true" data-tab="stats">统计概览</button>
+      <button class="segment-btn" id="tabBtnSettings" role="tab" aria-selected="false" data-tab="settings">偏好设置</button>
     </div>
 
-    <!-- Shortcuts Inset Group -->
-    <div class="inset-group">
-      <div class="group-header">极简快捷键</div>
-      <div class="list-container">
-        <div class="list-item">
-          <span>逐段吸附切换</span>
-          <div class="kbd-group"><kbd>J</kbd><kbd>K</kbd> 或 <kbd>↓</kbd><kbd>↑</kbd></div>
+    <!-- Tab 1: 统计概览 -->
+    <main class="tab-pane active" id="tabStats">
+      <!-- 今日专注态 -->
+      <section class="inset-group">
+        <div class="group-header">今日专注态</div>
+        <div class="stats-grid-3">
+          <div class="stat-card">
+            <div class="stat-value text-blue" id="todaySnapbacks">0</div>
+            <div class="stat-label">主动回神</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="todayParagraphs">0</div>
+            <div class="stat-label">精读段落</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value text-amber" id="todayCheckpoints">0</div>
+            <div class="stat-label">存检查点</div>
+          </div>
         </div>
-        <div class="list-item">
-          <span>理解检查点 (签收)</span>
-          <div class="kbd-group"><kbd>C</kbd></div>
+      </section>
+
+      <!-- 累积元认知数据 -->
+      <section class="inset-group">
+        <div class="group-header">累积元认知数据</div>
+        <div class="stats-grid-2x2">
+          <div class="stat-card-row">
+            <span class="row-label">累计回神</span>
+            <span class="row-value" id="totalSnapbacks">0 次</span>
+          </div>
+          <div class="stat-card-row">
+            <span class="row-label">挽救飘逸段</span>
+            <span class="row-value text-amber" id="totalDriftSaved">0 段</span>
+          </div>
+          <div class="stat-card-row">
+            <span class="row-label">达成专注冲刺</span>
+            <span class="row-value text-green" id="completedSprints">0 次</span>
+          </div>
+          <div class="stat-card-row">
+            <span class="row-label">累计精读段落</span>
+            <span class="row-value" id="totalParagraphs">0 段</span>
+          </div>
         </div>
-        <div class="list-item">
-          <span>一键回神 (跳回检查点)</span>
-          <div class="kbd-group"><kbd>R</kbd></div>
+      </section>
+
+      <!-- 元认知状态与管理 -->
+      <section class="inset-group">
+        <div class="insight-card">
+          <span class="insight-icon">💡</span>
+          <span class="insight-text">善用检查点 (C) 锚定思维，走神时从容一键回神 (R)。</span>
         </div>
-        <div class="list-item">
-          <span>双击任意段落</span>
-          <div class="kbd-group"><kbd>快速聚焦</kbd></div>
+        <div class="stats-footer-action">
+          <button class="text-btn-subtle" id="btnResetStats">重置统计数据</button>
         </div>
-        <div class="list-item">
-          <span>退出聚焦模式</span>
-          <div class="kbd-group"><kbd>Esc</kbd></div>
+      </section>
+    </main>
+
+    <!-- Tab 2: 偏好设置 -->
+    <main class="tab-pane" id="tabSettings">
+      <!-- 交互与手势设置 -->
+      <section class="inset-group">
+        <div class="group-header">交互与手势</div>
+        <div class="list-container">
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-title">双击段落开启聚焦</span>
+              <span class="setting-desc">默认关闭以保证划词选词复制正常</span>
+            </div>
+            <label class="apple-switch mini">
+              <input type="checkbox" id="settingEnableDblClick">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-title">视线平滑吸附居中</span>
+              <span class="setting-desc">换段时自动平滑滚动至舒适阅读视野</span>
+            </div>
+            <label class="apple-switch mini">
+              <input type="checkbox" id="settingAutoScroll">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-title">保留思维飘逸痕迹</span>
+              <span class="setting-desc">回神时以琥珀线提示漏读段落</span>
+            </div>
+            <label class="apple-switch mini">
+              <input type="checkbox" id="settingKeepDriftMarks">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-title">自动折叠 AI 思考过程</span>
+              <span class="setting-desc">访问 DeepSeek / Claude 时收起思考框</span>
+            </div>
+            <label class="apple-switch mini">
+              <input type="checkbox" id="settingAutoFoldThinking">
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <!-- 极简快捷键 -->
+      <section class="inset-group">
+        <div class="group-header">极简快捷键</div>
+        <div class="list-container">
+          <div class="list-item">
+            <span>逐段吸附切换</span>
+            <div class="kbd-group"><kbd>J</kbd><kbd>K</kbd> 或 <kbd>↓</kbd><kbd>↑</kbd></div>
+          </div>
+          <div class="list-item">
+            <span>理解检查点 (签收)</span>
+            <div class="kbd-group"><kbd>C</kbd></div>
+          </div>
+          <div class="list-item">
+            <span>一键回神 (跳回点)</span>
+            <div class="kbd-group"><kbd>R</kbd></div>
+          </div>
+          <div class="list-item">
+            <span>开启 / 关闭聚焦</span>
+            <div class="kbd-group"><kbd>Alt</kbd><kbd>F</kbd></div>
+          </div>
+          <div class="list-item">
+            <span>退出聚焦模式</span>
+            <div class="kbd-group"><kbd>Esc</kbd></div>
+          </div>
+        </div>
+      </section>
+    </main>
 
     <!-- Footer tip -->
     <footer class="app-footer">

@@ -353,9 +353,113 @@
   pointer-events: none;
   transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   border-radius: 18px;
+  z-index: 30;
 }
 
 .btf-toast-show {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* ========================================================
+   4. 卡片快捷偏好设置浮层 (Quick Settings Overlay)
+   ======================================================== */
+.btf-card-settings {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(28, 28, 30, 0.96);
+  backdrop-filter: blur(30px) saturate(190%);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  border-radius: 18px;
+  padding: 12px 14px;
+  gap: 10px;
+  z-index: 20;
+  box-sizing: border-box;
+}
+
+.btf-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 2px;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.12);
+}
+
+.btf-settings-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #E5E5EA;
+  letter-spacing: -0.2px;
+}
+
+.btf-settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.btf-settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+}
+
+.btf-settings-label-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.btf-settings-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #F2F2F7;
+}
+
+.btf-settings-hint {
+  font-size: 9px;
+  color: #8E8E93;
+}
+
+.btf-mini-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 32px;
+  height: 18px;
+  border-radius: 18px;
+  background: rgba(120, 120, 128, 0.32);
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.25s ease;
+  flex-shrink: 0;
+}
+
+.btf-mini-switch:before {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btf-mini-switch:checked {
+  background: #34C759;
+}
+
+.btf-mini-switch:checked:before {
+  transform: translateX(14px);
 }
